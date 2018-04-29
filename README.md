@@ -1,6 +1,6 @@
 # JobApplication
 
-jobapplication.cc
+jobapplication.cc	
 vaihtoehtoinen työpaikkahakemus
 
 Kun ohjelman käynnistää se kysyy salasanaa, oikea salasana on "password".
