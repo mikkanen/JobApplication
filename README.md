@@ -8,7 +8,7 @@
 //  Kun ohjelman käynnistää se kysyy salasanaa, oikea salasana on "password".                  //
 //  Ohjelma luo Agile-käytänteisen projektipäällikön, jolla on resursseina 12 Agile            //
 //  ohjelmistokehittäjää. Projektipäällikkö luo ja lähettää tehtäviä ohjelmistokehittäjille    //
-//  FIFO-jonon kautta. Ohjelmistokehittäjät kuuntelevat FIFO-jonoa ja nopein saa sen            //
+//  FIFO-jonon kautta. Ohjelmistokehittäjät kuuntelevat FIFO-jonoa ja nopein saa sen           //
 //  hoidettavaksi.                                                                             //
 //                                                                                             //
 //  Kukin ohjelmistokehittäjä ja projektipäällikkö pyörii kahdessa säikeessä(thread).          //
