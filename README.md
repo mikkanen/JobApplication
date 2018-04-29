@@ -1,6 +1,7 @@
 # JobApplication
 
-jobapplication.cc	
+jobapplication.cc
+
 vaihtoehtoinen työpaikkahakemus
 
 Kun ohjelman käynnistää se kysyy salasanaa, oikea salasana on "password".
@@ -22,4 +23,5 @@ Linux-järjestelmässä, mutta pitäisi olla myös käännettävissä esim MacOS
 Ohjelma on C++11 standardin mukainen.
 
 Created by Markku Mikkanen on 30/04/2018.
+
 Copyright © 2018 Markku Mikkanen. All rights reserved.
