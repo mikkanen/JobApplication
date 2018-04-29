@@ -25,3 +25,10 @@ Ohjelma on C++11 standardin mukainen.
 Created by Markku Mikkanen on 30/04/2018.
 
 Copyright © 2018 Markku Mikkanen. All rights reserved.
+
+[mikkanen@localhost CV]$ 
+[mikkanen@localhost CV]$ g++ -Wall -std=c++11 -fno-builtin-memset jobapplication.cc -o jobapplication -pthread
+[mikkanen@localhost CV]$ 
+
+[mikkanen@localhost CV]$ ./jobapplication > jobapplication.out 2>&1
+password
