@@ -1,0 +1,15 @@
+[mikkanen@localhost ~]$ 
+[mikkanen@localhost ~]$ cd Development/CV/
+[mikkanen@localhost CV]$ ll
+total 340
+-rwxrwxr-x. 1 mikkanen mikkanen  92176 Apr 29 20:09  jobapplication
+-rw-rw-r--. 1 mikkanen mikkanen  27743 Apr 29 19:59  jobapplication.cc
+-rw-rw-r--. 1 mikkanen mikkanen  27733 Apr 29 18:46  jobapplication.cc~
+drwxrwxr-x. 2 mikkanen mikkanen   4096 Apr 28 12:09  Temp
+[mikkanen@localhost CV]$ 
+[mikkanen@localhost CV]$ g++ -Wall -std=c++11 -fno-builtin-memset jobapplication.cc -o jobapplication -pthread
+[mikkanen@localhost CV]$ 
+
+[mikkanen@localhost CV]$ ./jobapplication > jobapplication.out 2>&1
+password
+
