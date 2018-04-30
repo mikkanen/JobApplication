@@ -2,7 +2,7 @@
 
 jobapplication.cc
 
-vaihtoehtoinen työpaikkahakemus
+Vaihtoehtoinen työpaikkahakemus
 
 Kun ohjelman käynnistää se kysyy salasanaa, oikea salasana on "password".
 Ohjelma luo Agile-käytänteisen projektipäällikön, jolla on resursseina 12 Agile
