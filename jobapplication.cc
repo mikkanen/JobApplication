@@ -31,6 +31,7 @@
 // []$> g++ -Wall -std=c++11 jobapplication.cc -o jobapplication -pthread
 // -std=[c++98, c++11, c++14, c++17, c++20]
 
+
 #define __STDC_WANT_LIB_EXT1__ 1
 
 #include <stdio.h>
