@@ -1,25 +1,25 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                             //
 //  jobapplication.cc                                                                          //
-//  vaihtoehtoinen työpaikkahakemus                                                            //
+//  An alternative job application                                                             //
 //                                                                                             //
-//  Kun ohjelman käynnistää se kysyy salasanaa, oikea salasana on "password".                  //
-//  Ohjelma luo Agile-käytänteisen projektipäällikön, jolla on resursseina 12 Agile            //
-//  ohjelmistokehittäjää. Projektipäällikkö luo ja lähettää tehtäviä ohjelmistokehittäjille    //
-//  FIFO-jonon kautta. Ohjelmistokehitäjät kuuntelevat FIFO-jonoa ja nopein saa sen            //
-//  hoidettavaksi.                                                                             //
+//  When you start the program it ask password, correct password is "password". :-)            //
+//  The program creates project manager which follows agile methologies and, who have 12       //
+//  software developers as resource. The project manager creates and sends tasks to            //
+//  software developers via the FIFO queue. Software developers listen to the FIFO queue and   //
+//  the fastest one gets it for caried out.                                                    //
 //                                                                                             //
-//  Kukin ohjelmistokehittäjä ja projektipäällikkö pyörii kahdessa säikeessä(thread).          //
-//  Toinen säie, MammalBasicFunctions_c huolehtii perustoiminnoista kuten hengittämisestä,     //
-//  syömisestä, nukkumisesta. Eli nukkuessa ja syödessä ei tehdä töitä. Toinen säie hoitaa     //
-//  varsinaisen työn.                                                                          //
+//  Each software developer and project manager lives in two threads (thread).                 //
+//  In the second thread, MammalBasicFunctions_c provides basic functions such as breathing,   //
+//  eating, sleeping. So, while sleeping or eating not do any work. The first thread          //
+//  carries out the actual work(payload).                                                      //
 //                                                                                             //
-//  (Yhteensä projektipäällikkö ja 12 ohjelmistokehittäjää tarkoittaa 26 säiettä((12*2)+2),    //
-//  tietysti main() vielä yksi säie)                                                           //
+//  (Total project manager and 12 software developers mean 26 threads((12*2)+2)).              //
 //                                                                                             //
-//  Alla ohjeet ohjelman kääntämiseksi kohdejärjestelmässä. Ohjelma on koodattu Fedora 27      //
-//  Linux-järjestelmässä, mutta pitäisi olla myös käännettävissä esim MacOS:lla.               //
-//  Ohjelma on C++11 standardin mukainen.                                                      //
+//                                                                                             //
+//  In the below are instructions for compiling the program in the target system.              //
+//  This program is coded on Fedora 27 Linux-system, but it most probably can be compiled      //
+//  and executed on ,e.g., MacOS. It is standard STL program and it follows C++11 standard.    //
 //                                                                                             //
 //  Created by Markku Mikkanen on 30/04/2018.                                                  //
 //  Copyright © 2018 Markku Mikkanen. All rights reserved.                                     //
@@ -50,7 +50,15 @@ using namespace std;
 
 static std::mutex mtx_cout;
 
-// Asynchronous output
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: acout                                                                                //
+//                                                                                             //
+// cout based trace output replaced with  acout() << "..."                                     //
+// cout in multi thread program, it not print well                                             //
+// Asynchronous output                                                                         //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 struct acout
 {
   std::unique_lock<std::mutex> lk;
@@ -75,6 +83,13 @@ struct acout
   }
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+//  class: Runnable_c                                                                          //
+//                                                                                             //
+// Base class for threads                                                                      //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class Runnable_c
 {
 public:
@@ -224,6 +239,14 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+//  class: MammalBasicFunctions_c                                                              //
+//                                                                                             //
+// MammalBasicFunctions_c-class carries out basic mammal functions as breathing, sleeping      //
+// and eating                                                                                  //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class MammalBasicFunctions_c: public Runnable_c
 {
 public:
@@ -266,9 +289,15 @@ protected:
   // virtual void UseLimbsForEat()=0;
   virtual void UseLimbsForEat() {}
   
-  void Sleep() {}
+  void Sleep()
+  {
+    acout() << "Mammal_c::Sleep() called" << endl;
+    
+  }
   void Eat()
   {
+    acout() << "Mammal_c::Eat() called" << endl;      
+    
     UseLimbsForEat();
   }
   void Breath() {}
@@ -288,7 +317,6 @@ protected:
 	
 	EatCounter=0;
 	Eat();
-	acout() << "Mammal_c::Eat() called" << endl;      
       }
       else
       {
@@ -300,7 +328,6 @@ protected:
 	m_isSleeping=true;
 	
 	Sleep();
-	acout() << "Mammal_c::Sleep() called" << endl;
 
 	SleepCounter=(SleepCounter > 20)?0:SleepCounter;
       }
@@ -323,6 +350,16 @@ private:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: Mammal_c                                                                             //
+//                                                                                             //
+// This class carries out basic mammal functions as BeActive()                                 //
+//                                                                                             //
+// Functions like breathing, sleeping and eating are implemented in another thread and class   //
+// MammalBasicFunctions_c                                                                      //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class Mammal_c: public Runnable_c
 {
 public:
@@ -349,7 +386,11 @@ public:
   }
 
 protected:
-  virtual void BeActive() {}
+  virtual void BeActive()
+  {
+    acout() << "Mammal_c::BeActive() called" << endl;
+
+  }
 
   // virtual void UseLimbsForEat() {}
   
@@ -361,7 +402,6 @@ protected:
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
-	acout() << "Mammal_c::BeActive() called" << endl;
       }
 
     }
@@ -380,7 +420,18 @@ private:
   
 };
 
-// primate = kädelliset
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: Primate_c                                                                            //
+//                                                                                             //
+// primate = kädelliset                                                                        //
+// The class implements primate primal basic functions such as BeActive (), UseHands (),       //
+// Relax (). Primate even not know how to use hands or work.                                   //
+//                                                                                             //
+// Functions like breathing, sleeping and eating are implemented in another thread and class   //
+// Mammal_c::MammalBasicFunctions_c                                                            //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class Primate_c: public Mammal_c
 {
 public:
@@ -395,12 +446,22 @@ public:
 
 protected:
 
-  virtual void UseHands() {}
+  virtual void UseHands()
+  {
+    acout() << "Primate_c::UseHands() called" << endl;
 
-  virtual void Relax() {}
+  }
+
+  virtual void Relax()
+  {
+    acout() << "Primate_c::Relax() called" << endl;
+
+  }
   
   virtual void BeActive()
   {
+    acout() << "Primate_c::BeActive() called" << endl;
+
     int randomAction = rand() % 2 +1; //Generates number between 1 - 2
 
     switch (randomAction)
@@ -408,12 +469,10 @@ protected:
       case 1:
 	//
 	UseHands();
-	acout() << "Primate_c::UseHands() called" << endl;
 	break;
       case 2:
 	//
 	Relax();
-	acout() << "Primate_c::Relax() called" << endl;
 	break;
 	
       }
@@ -428,7 +487,6 @@ protected:
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
-	acout() << "Primate_c::BeActive() called" << endl;
       }
 
     }
@@ -443,6 +501,17 @@ protected:
   
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: Human_c                                                                              //
+//                                                                                             //
+// The class carries out basic human functions like BeActive(), UseHands(), Relax(), Speak(),  //
+// Work(), Hobby().                                                                            //
+//                                                                                             //
+// Functions like breathing, sleeping and eating are implemented in another thread and class   //
+// Primate_c::Mammal_c::MammalBasicFunctions_c                                                 //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class Human_c: public Primate_c
 {
 public:
@@ -456,11 +525,16 @@ public:
   }
 protected:
 
-  virtual void UseHands() {}
+  virtual void UseHands()
+  {
+    acout() << "Human_c::UseHands() called" << endl;
+
+  }
   
   virtual void BeActive()
   {
-
+    acout() << "Human_c::BeActive() called" << endl;
+	
     int randomAction = rand() % 5 +1; //Generates number between 1 - 5
 
     switch (randomAction)
@@ -468,39 +542,53 @@ protected:
       case 1:
 	//
 	UseHands();
-	acout() << "Human_c::UseHands() called" << endl;
 
 	break;
       case 2:
 	//
 	Work();
-	acout() << "Human_c::Work() called" << endl;	
 	break;
       case 3:
 	//
 	Hobby();
-	acout() << "Human_c::Hobby() called" << endl;
 	break;
       case 4:
 	//
 	Speak();
-	acout() << "Human_c::Speak() called" << endl;
 	break;
       case 5:
 	//
 	Relax();
-	acout() << "Human_c::Relax() called" << endl;
 	break;
 	
       }
     
   }
 
-  virtual void Speak() {}
-  virtual void Work() {}
-  virtual void Hobby() {}
+  virtual void Speak()
+  {
+    acout() << "Human_c::Speak() called" << endl;
+    
+  }
+  
+  virtual void Work()
+  {
+    acout() << "Human_c::Work() called" << endl;	
+    
+    UseHands();    
+  }
+  
+  virtual void Hobby()
+  {
+    acout() << "Human_c::Hobby() called" << endl;
 
-  virtual void Relax() {}
+  }
+
+  virtual void Relax()
+  {
+    acout() << "Human_c::Relax() called" << endl;
+
+  }
   
   virtual void Run()
   {
@@ -510,7 +598,6 @@ protected:
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
-	acout() << "Human_c::BeActive() called" << endl;
       }
 
     }
@@ -525,6 +612,14 @@ protected:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: ProjectTask_c                                                                        //
+//                                                                                             //
+// The class implements task types project manager can send to software developers.            //
+//                                                                                             //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class ProjectTask_c
 {
 public:
@@ -577,6 +672,15 @@ public:
 
 const unsigned int ProjectTask_c::NUMBER_OF_PROJECT_TASK_TYPES=9;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: template <class T> class ThreadSafeProjectTaskQueue_c                                //
+//                                                                                             //
+// Theread safe FIFO queue where project manager put the tasks to be carried out by            //
+// software developers.                                                                        //
+//                                                                                             //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 template <class T>
 class ThreadSafeProjectTaskQueue_c
 {
@@ -659,6 +763,14 @@ private:
 
 ThreadSafeProjectTaskQueue_c <ProjectTask_c *> m_ThreadSafeProjectTaskQueue;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: Agile_c                                                                              //
+//                                                                                             //
+// This class implements agile methologies used in this software project.                      //
+//                                                                                             //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class Agile_c
 {
 public:
@@ -667,6 +779,14 @@ public:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: Waterfall_c                                                                          //
+//                                                                                             //
+// This class implements waterfall methologies used in this software project.                  //
+//                                                                                             //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class Waterfall_c
 {
 public:
@@ -675,6 +795,14 @@ public:
 
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: Cpp_c                                                                                //
+//                                                                                             //
+// Defines and implements a programming language which is used in a software project.          //
+//                                                                                             //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 // Thanks Bjarne Stroustrup, that you created such nice language C++
 // https://www.youtube.com/watch?v=JBjjnqG0BP8
 class Cpp_c
@@ -685,6 +813,14 @@ public:
   void WriteCode() {}
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: Java_c                                                                               //
+//                                                                                             //
+// Defines and implements a programming language which is used in a software project.          //
+//                                                                                             //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 class Java_c
 {
 public:
@@ -693,6 +829,16 @@ public:
   void WriteCode() {}
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: template <class T> class SoftwareProjectManager_c                                    //
+//                                                                                             //
+// This class implements project manager functionalities                                       //
+//                                                                                             //
+// Functions like breathing, sleeping and eating are implemented in another thread and class   //
+// Human_c::Primate_c::Mammal_c::MammalBasicFunctions_c                                        //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 template <class T>
 class SoftwareProjectManager_c: public Human_c
 {
@@ -724,10 +870,15 @@ public:
 
 protected:
 
-  virtual void UseHands() {}
+  virtual void UseHands()
+  {
+    acout() << "SoftwareProjectManager_c::UseHands() called" << endl;
+	
+  }
   
   virtual void BeActive()
   {
+    acout() << "SoftwareProjectManager_c::BeActive() called" << endl;
 
     int randomAction = rand() % 10 +1; //Generates number between 1 - 10
 
@@ -736,48 +887,49 @@ protected:
       case 1:
 	//
 	UseHands();
-	acout() << "SoftwareProjectManager_c::UseHands() called" << endl;
 
 	break;
       case 2:
 	//
 	Work();
-	acout() << "SoftwareProjectManager_c::Work() called" << endl;	
 	break;
       case 3:
 	//
 	Hobby();
-	acout() << "SoftwareProjectManager_c::Hobby() called" << endl;
 	break;
       case 4:
 	//
 	Speak();
-	acout() << "SoftwareProjectManager_c::Speak() called" << endl;
 	break;
       case 5:
 	//
 	Relax();
-	acout() << "SoftwareProjectManager_c::Relax() called" << endl;
 
 	break;
       default:
 	// Sometimes Project Manager has to do some job in evening and weekend
 	Work();
-	acout() << "SoftwareProjectManager_c::Work() called" << endl;	
 	break;
       }
     
   }
 
-  virtual void Speak() {}
+  virtual void Speak()
+  {
+    acout() << "SoftwareProjectManager_c::Speak() called" << endl;
+
+  }
   virtual void Work()
   {
+    acout() << "SoftwareProjectManager_c::Work() called" << endl;	
+
     int randomAction = rand() % 12 +1; //Generates number between 1 - 12
 
     switch (randomAction)
       {
       case 1:
-	ShakingHandsOnAir(); // heiluttelee käsiä ilmassa
+	// Some not so good project managers only are able to shaking hands on air
+	ShakingHandsOnAir();
 	break;
       case 2:
 	WriteReports();
@@ -801,9 +953,17 @@ protected:
       }
   }
   
-  virtual void Hobby() {}
+  virtual void Hobby()
+  {
+    acout() << "SoftwareProjectManager_c::Hobby() called" << endl;
 
-  virtual void Relax() {}
+  }
+
+  virtual void Relax()
+  {
+    acout() << "SoftwareProjectManager_c::Relax() called" << endl;
+    
+  }
   
   virtual void Run()
   {
@@ -812,11 +972,11 @@ protected:
       // Project manager has to act faster for multible software developers
       this_thread::sleep_for(chrono::milliseconds(500));
       // this_thread::sleep_for(chrono::milliseconds(1000));
-      
+
+      // If project manager is sleeping or eating, no work done.
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
-	acout() << "SoftwareProjectManager_c::BeActive() called" << endl;
       }
 
     }
@@ -842,6 +1002,7 @@ private:
   void VisitCustomer() {}
   void ManageBudget() {}
 
+  // return type of project, agile or waterfall
   static const char* GetType()
   {
     return typeid(T).name();
@@ -870,9 +1031,21 @@ private:
   }
 };
 
+// initializing static member. All tasks have serial number for future follow up purpose
+// so software developers can report that certain task is done
 template <class T>
 unsigned int SoftwareProjectManager_c<T>::taskSerialNumber=1;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// class: template <class T> class SoftwareDeveloper_c                                         //
+//                                                                                             //
+// This class implements software developer functionalities                                    //
+//                                                                                             //
+// Functions like breathing, sleeping and eating are implemented in another thread and class   //
+// Human_c::Primate_c::Mammal_c::MammalBasicFunctions_c                                        //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 template <class T>
 class SoftwareDeveloper_c: public Human_c
 {
@@ -895,10 +1068,15 @@ public:
 
 protected:
 
-  virtual void UseHands() {}
+  virtual void UseHands()
+  {
+    acout() << "SoftwareDeveloper_c::UseHands() called" << endl;
+
+  }
   
   virtual void BeActive()
   {
+    acout() << "SoftwareDeveloper_c::BeActive() called" << endl;
 
     int randomAction = rand() % 10 +1; //Generates number between 1 - 10
 
@@ -907,42 +1085,46 @@ protected:
       case 1:
 	//
 	UseHands();
-	acout() << "SoftwareDeveloper_c::UseHands() called" << endl;
 
 	break;
       case 2:
 	//
 	Work();
-	acout() << "SoftwareDeveloper_c::Work() called" << endl;	
+
 	break;
       case 3:
 	//
 	Hobby();
-	acout() << "SoftwareDeveloper_c::Hobby() called" << endl;
+
 	break;
       case 4:
 	//
 	Speak();
-	acout() << "SoftwareDeveloper_c::Speak() called" << endl;
+
 	break;
       case 5:
 	//
 	Relax();
-	acout() << "SoftwareDeveloper_c::Relax() called" << endl;
 
 	break;
       default:
 	// Sometimes SoftwareDeveloper_c has to do some job in evening and weekend
 	Work();
-	acout() << "SoftwareDeveloper_c::Work() called" << endl;	
+
 	break;
       }
     
   }
 
-  virtual void Speak() {}
+  virtual void Speak()
+  {
+    acout() << "SoftwareDeveloper_c::Speak() called" << endl;
+
+  }
   virtual void Work()
   {
+    acout() << "SoftwareDeveloper_c::Work() called" << endl;	
+    
     // int randomAction = rand() % 10 +1; //Generates number between 1 - 10
 
     // switch (randomAction)
@@ -955,9 +1137,17 @@ protected:
     //   }
   }
   
-  virtual void Hobby() {}
+  virtual void Hobby()
+  {
+    acout() << "SoftwareDeveloper_c::Hobby() called" << endl;
 
-  virtual void Relax() {}
+  }
+
+  virtual void Relax()
+  {
+    acout() << "SoftwareDeveloper_c::Relax() called" << endl;
+    
+  }
   
   virtual void Run()
   {
@@ -967,7 +1157,6 @@ protected:
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
-	acout() << "SoftwareDeveloper_c::BeActive() called" << endl;
       }
 
     }
@@ -988,17 +1177,63 @@ private:
 
   unsigned int taskExecutedDuringProject;
   
-  void WriteCode() {}
-  void TestCode() {}
-  void WriteDocument() {}
-  void AttendMeeting() {}
+  void WriteCode()
+  {
+    acout() << "SoftwareDeveloper_c::WriteCode() called" <<
+      endl;
 
-  void WriteReport() {}
-  void ArrangeMeeting() {}
-  void VisitCustomer() {}
-  void GiveCustomerSupport() {}
-  void PublishNewSoftwareRelease() {}
+  }
+  void TestCode()
+  {
+    acout() << "SoftwareDeveloper_c::TestCode() called" <<
+      endl;	
 
+  }
+  void WriteDocument()
+  {
+    acout() << "SoftwareDeveloper_c::WriteDocument() called" <<
+      endl;
+
+  }
+  void AttendMeeting()
+  {
+    acout() << "SoftwareDeveloper_c::AttendMeeting() called" <<
+      endl;
+
+  }
+
+  void WriteReport()
+  {
+    acout() << "SoftwareDeveloper_c::WriteReport() called" <<
+      endl;
+
+  }
+  void ArrangeMeeting()
+  {
+    acout() << "SoftwareDeveloper_c::ArrangeMeeting() called" <<
+      endl;
+
+  }
+  void VisitCustomer()
+  {
+    acout() << "SoftwareDeveloper_c::VisitCustomer() called" <<
+      endl;
+
+  }
+  void GiveCustomerSupport()
+  {
+    acout() << "SoftwareDeveloper_c::GiveCustomerSupport() called" <<
+      endl;
+
+  }
+  void PublishNewSoftwareRelease()
+  {
+    acout() << "SoftwareDeveloper_c::PublishNewSoftwareRelease() called" <<
+      endl;
+
+  }
+
+  // return type of project, agile or waterfall
   static const char* GetType()
   {
     return typeid(T).name();
@@ -1028,56 +1263,38 @@ private:
       case ProjectTask_c::WRITECODE:
 	//
 	WriteCode();
-	acout() << "SoftwareDeveloper_c::WriteCode() called" <<
-	  endl;
 	break;
       case ProjectTask_c::TESTCODE:
 	//
 	TestCode();
-	acout() << "SoftwareDeveloper_c::TestCode() called" <<
-	  endl;	
 	break;
       case ProjectTask_c::WRITEDOCUMENT:
 	//
 	WriteDocument();
-	acout() << "SoftwareDeveloper_c::WriteDocument() called" <<
-	  endl;
 	break;
       case ProjectTask_c::ARRANGEMEETING:
 	//
 	ArrangeMeeting();
-	acout() << "SoftwareDeveloper_c::ArrangeMeeting() called" <<
-	  endl;
 	break;
       case ProjectTask_c::ATTENDMEETING:
 	//
 	AttendMeeting();
-	acout() << "SoftwareDeveloper_c::AttendMeeting() called" <<
-	  endl;
 	break;
       case ProjectTask_c::WRITEREPORT:
 	//
 	WriteReport();
-	acout() << "SoftwareDeveloper_c::WriteReport() called" <<
-	  endl;
 	break;
       case ProjectTask_c::VISITCUSTOMER:
 	//
 	VisitCustomer();
-	acout() << "SoftwareDeveloper_c::VisitCustomer() called" <<
-	  endl;
 	break;
       case ProjectTask_c::GIVECUSTOMERSUPPORT:
 	//
 	GiveCustomerSupport();
-	acout() << "SoftwareDeveloper_c::GiveCustomerSupport() called" <<
-	  endl;
 	break;
       case ProjectTask_c::PUBLISHNEWSOFTWARERELEASE:
 	//
 	PublishNewSoftwareRelease();
-	acout() << "SoftwareDeveloper_c::PublishNewSoftwareRelease() called" <<
-	  endl;
 	break;
 	
       default:
@@ -1099,6 +1316,13 @@ template <class T>
 unsigned int SoftwareDeveloper_c<T>::softwareDeveloperInstanceNumber=1;
 
 #ifndef __STDC_LIB_EXT1__
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// function: secure_memset                                                                     //
+//                                                                                             //
+// This function is safe to use because it won't be optimized out by compiler.                 //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 void *secure_memset (unsigned char *v,unsigned char c,size_t n)
 {
   // The trick is to use 'volatile' keyword and then compiler stop
@@ -1109,6 +1333,13 @@ void *secure_memset (unsigned char *v,unsigned char c,size_t n)
 }
 #endif
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                             //
+// function: main                                                                              //
+//                                                                                             //
+// Standard main function                                                                      //
+//                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[])
 {
 
@@ -1116,40 +1347,40 @@ int main (int argc, char *argv[])
   // srand (time(NULL));
   srand(static_cast <unsigned int> (time(0)));
 
-
   unsigned int n = thread::hardware_concurrency();
-  acout() << n << " concurrent threads are supported by CPU." << endl;
+  cout << n << " concurrent threads are supported by CPU." << endl;
 
   std::hash <std::string> hash;
   string password;
 
-  // unsigned long hashedPassword = 1065148159544519853;
   // hash of password
   unsigned long hashedPassword = 6072375419398818283;
   // correct password is "password"
   
-  acout() << "Give Password to Execute Program:";
+  cout << "Give Password to Execute Program:";
   cin >> password;
 
   unsigned long hashedPasswordGuess = hash(password);
 
   if (hashedPasswordGuess  == hashedPassword)
   {
-    acout() << "Password is correct!" << endl;
+    cout << "Password is correct!" << endl;
   }
   else
   {
-    acout() << "Password is wrong!" << endl;
+    cout << "Password is wrong!" << endl;
     // cout << "Hash:" << hashedPasswordGuess <<endl;
     exit(-1);
   }
 
   hashedPassword=hashedPasswordGuess=0;
+
+
 #ifdef __STDC_LIB_EXT1__
   set_constraint_handler_s(ignore_handler_s);
 
   // As standard memset(...) might be optimized out by compiled
-  // memset_s is guaranteed
+  // memset_s is guaranteed that it won't be optimized out
   // Unluckily it is not supported by Fedora 27 Linux
   memset_s(password.c_str(),password.length(),0,password.length());
   acout() << "memset_s(...) Secured!" << endl;
@@ -1165,6 +1396,7 @@ int main (int argc, char *argv[])
   
   password.clear();
 
+  
   /*
   // Code section for testing Mammal_c
   Mammal_c mammal;
@@ -1176,7 +1408,6 @@ int main (int argc, char *argv[])
   acout() << "Stopped!" << endl;
   // mammal.Stop();
   acout() << "Completed!" << endl;
-
   */
 
   /*
@@ -1190,7 +1421,6 @@ int main (int argc, char *argv[])
   acout() << "Stopped!" << endl;
   // primate.Stop();
   acout() << "Completed!" << endl;
-
   */
 
   /*
@@ -1203,7 +1433,6 @@ int main (int argc, char *argv[])
   acout() << "Stopped!" << endl;
   // Human.Stop();
   acout() << "Completed!" << endl;
-
   */
 
   /*
@@ -1216,7 +1445,6 @@ int main (int argc, char *argv[])
   acout() << "Stopped!" << endl;
   // mainProjectManager.Stop();
   acout() << "Completed!" << endl;
-
   */
 
   /*
@@ -1227,6 +1455,7 @@ int main (int argc, char *argv[])
   mainProjectManager.Start();
   softwareDeveloper.Start();
   
+  // project last 1 minutes
   this_thread::sleep_for(chrono::milliseconds(1000*60));
   
   mainProjectManager.WillStop();
@@ -1253,7 +1482,8 @@ int main (int argc, char *argv[])
   mainProjectManager.Start();
   for (auto i=0; i<number_of_software_developers_in_project; i++)
     softwareDeveloper[i].Start();
-  
+
+  // project last 1 minutes
   this_thread::sleep_for(chrono::milliseconds(1000*60));
   
   mainProjectManager.WillStop();
