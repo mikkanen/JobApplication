@@ -33,7 +33,7 @@
 // -std=[c++98, c++11, c++14, c++17, c++20]
 
 // ONko vielä pätevä?
-#define __STDC_WANT_LIB_EXT1__ 1
+// #define __STDC_WANT_LIB_EXT1__ 1
 
 #include <stdio.h>
 #include <string.h>
@@ -1364,26 +1364,16 @@ int main (int argc, char *argv[])
   {
     safe_print("Password is wrong!");
     // safe_print("Hash:" << hashedPasswordGuess <<endl);
+    secure_memset((unsigned char *)password.data(), 0, password.length());
+    password.clear();
     exit(-1);
   }
 
   hashedPassword=hashedPasswordGuess=0;
 
 
-#ifdef __STDC_LIB_EXT1__
-  set_constraint_handler_s(ignore_handler_s);
-
-  // As standard memset(...) might be optimized out by compiled
-  // memset_s is guaranteed that it won't be optimized out
-  // Unluckily it is not supported by Fedora 27 Linux
-  memset_s(password.c_str(),password.length(),0,password.length());
-  safe_print("memset_s(...) Secured!" << endl);
-#else
-  // standard C memset might be optimized out by compiler
-  // memset((void *)password.c_str(),0,password.length());
-  secure_memset((unsigned char *)password.c_str(),0,password.length());
+  secure_memset((unsigned char *)password.data(),0,password.length());
   safe_print("secure_memset(...) Secured!");
-#endif
 
   // std::fill_n could be used too
   // std::fill_n((volatile char*)p, n*sizeof(T), 0);
