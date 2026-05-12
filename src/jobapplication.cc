@@ -11,7 +11,7 @@
 //                                                                                             //
 //  Each software developer and project manager lives in two threads (thread).                 //
 //  In the second thread, MammalBasicFunctions_c provides basic functions such as breathing,   //
-//  eating, sleeping. So, while sleeping or eating not do any work. The first thread          //
+//  eating, sleeping. So, while sleeping or eating not do any work. The first thread           //
 //  carries out the actual work(payload).                                                      //
 //                                                                                             //
 //  (Total project manager and 12 software developers mean 26 threads((12*2)+2)).              //
@@ -19,10 +19,11 @@
 //                                                                                             //
 //  In the below are instructions for compiling the program in the target system.              //
 //  This program is coded on Fedora 27 Linux-system, but it most probably can be compiled      //
-//  and executed on ,e.g., MacOS. It is standard STL program and it follows C++11 standard.    //
+//  and executed on ,e.g., MacOS, Windows and Raspberry Pi. It is standard STL program and it  //
+//  follows C++11 standard.                                                                    //
 //                                                                                             //
 //  Created by Markku Mikkanen on 30/04/2018.                                                  //
-//  Updated by Markku Mikkanen on 12/05/2026                                                                         //
+//  Updated by Markku Mikkanen on 12/05/2026                                                   //                      //
 //  Copyright © 2018 Markku Mikkanen. All rights reserved.                                     //
 //                                                                                             //
 /////////////////////////////////////////////////////////////////////////////////////////////////
