@@ -22,6 +22,7 @@
 //  and executed on ,e.g., MacOS. It is standard STL program and it follows C++11 standard.    //
 //                                                                                             //
 //  Created by Markku Mikkanen on 30/04/2018.                                                  //
+//  Updated by Markku Mikkanen on 12/05/2026                                                                         //
 //  Copyright © 2018 Markku Mikkanen. All rights reserved.                                     //
 //                                                                                             //
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +32,7 @@
 // []$> g++ -Wall -std=c++11 jobapplication.cc -o jobapplication -pthread
 // -std=[c++98, c++11, c++14, c++17, c++20]
 
-
+// ONko vielä pätevä?
 #define __STDC_WANT_LIB_EXT1__ 1
 
 #include <stdio.h>
@@ -46,43 +47,22 @@
 #include <chrono>
 #include <mutex>
 #include <queue>
+#include <vector>
+#include <memory>
+#include <atomic>
+#include <condition_variable>
+#include <random>
 
-using namespace std;
 
-static std::mutex mtx_cout;
+// using namespace std;
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                             //
-// class: acout                                                                                //
-//                                                                                             //
-// cout based trace output replaced with  acout() << "..."                                     //
-// cout in multi thread program, it not print well                                             //
-// Asynchronous output                                                                         //
-//                                                                                             //
-/////////////////////////////////////////////////////////////////////////////////////////////////
-struct acout
-{
-  std::unique_lock<std::mutex> lk;
-  acout()
-    :
-    lk(std::unique_lock<std::mutex>(mtx_cout))
-  {
-    
-  }
-  
-  template<typename T>
-  acout& operator<<(const T& _t)
-  {
-    std::cout << _t;
-    return *this;
-  }
-  
-  acout& operator<<(std::ostream& (*fp)(std::ostream&))
-  {
-    std::cout << fp;
-    return *this;
-  }
-};
+// Moderni säieturvallinen tulostus
+template<typename... Args>
+void safe_print(Args&&... args) {
+    static std::mutex cout_mtx;
+    std::lock_guard lock(cout_mtx);
+    (std::cout << ... << args) << std::endl;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                             //
@@ -97,12 +77,12 @@ public:
   
   Runnable_c() : m_isStopping(false), m_isStopped(true), m_isRunning(false), m_thread()
   {
-    acout() << "Runnable_c::Runnable_c() called" << endl;
+    safe_print("Runnable_c::Runnable_c() called");
   }
   
   virtual ~Runnable_c()
   {
-    acout() << "Runnable_c::~Runnable_c() called" << endl;
+    safe_print("Runnable_c::~Runnable_c() called");
     
     Join();
   }
@@ -112,7 +92,7 @@ public:
 
   bool WillStop()
   {
-    acout() << "Runnable_c::WillStop() called" << endl;
+    safe_print("Runnable_c::WillStop() called");
      
     if (!m_isRunning)
       return(false);
@@ -140,8 +120,7 @@ public:
 
   bool Join()
   {
-    acout() << "Runnable_c::Join() called: m_isRunning="<< m_isRunning <<" m_isStopping="<<
-      m_isStopping << " m_isStopped=" << m_isStopped << endl;
+    safe_print("Runnable_c::Join() called: m_isRunning=", m_isRunning, " m_isStopping=", m_isStopping, " m_isStopped=", m_isStopped);
       
     if (!m_isRunning)
       return(false);
@@ -179,8 +158,7 @@ protected:
 
   bool Start()
   {
-    acout() << "Runnable_c::Start() called: m_isRunning="<< m_isRunning <<" m_isStopping=" <<
-      m_isStopping << " m_isStopped=" << m_isStopped << endl;
+    safe_print("Runnable_c::Start() called: m_isRunning=", m_isRunning, " m_isStopping=", m_isStopping, " m_isStopped=", m_isStopped);
 
     if (m_isRunning)
       return(false);
@@ -207,8 +185,7 @@ protected:
   
   bool Stop()
   {
-    acout() << "Runnable_c::Stop() called: m_isRunning="<< m_isRunning <<" m_isStopping=" <<
-      m_isStopping << " m_isStopped=" << m_isStopped << endl;
+    safe_print("Runnable_c::Stop() called: m_isRunning=", m_isRunning, " m_isStopping=", m_isStopping, " m_isStopped=", m_isStopped);
     
     if(!m_isRunning)
       return(false);
@@ -220,7 +197,7 @@ protected:
       return(false);
     
  
-    acout() << "Thread Join" << endl;
+    safe_print("Thread Join");
     try
     {
       m_thread.join();
@@ -292,12 +269,11 @@ protected:
   
   void Sleep()
   {
-    acout() << "Mammal_c::Sleep() called" << endl;
-    
+    safe_print("Mammal_c::Sleep() called");
   }
   void Eat()
   {
-    acout() << "Mammal_c::Eat() called" << endl;      
+    safe_print("Mammal_c::Eat() called");
     
     UseLimbsForEat();
   }
@@ -309,7 +285,7 @@ protected:
     {
 
       Breath();
-      acout() << "MammalBasicFunction_c::Breath() called" << endl;
+      safe_print("MammalBasicFunction_c::Breath() called");
       this_thread::sleep_for(chrono::milliseconds(1000));
       
       if((EatCounter++>5)&&(SleepCounter<10)) // not eating when sleeping
@@ -338,7 +314,7 @@ protected:
       }
     }
 
-    acout() << "MammalBasicFunction_c::SetStopped() called" << endl;
+    safe_print("MammalBasicFunction_c::SetStopped() called");
 	
     SetStopped();
   }
@@ -389,7 +365,7 @@ public:
 protected:
   virtual void BeActive()
   {
-    acout() << "Mammal_c::BeActive() called" << endl;
+    safe_print("Mammal_c::BeActive() called");
 
   }
 
@@ -410,7 +386,7 @@ protected:
     mammalBasicFunctions.WillStop();
     while(!mammalBasicFunctions.IsStopped()) {}
 
-    acout() << "Mammal_c::SetStopped() called" << endl;
+    safe_print("Mammal_c::SetStopped() called");
 
     SetStopped();
   }
@@ -435,6 +411,12 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////////////
 class Primate_c: public Mammal_c
 {
+private:
+
+  // Alustetaan heti määrittelyssä, niin ne ovat käyttövalmiita
+  std::mt19937 rng{std::random_device{}()};
+  std::uniform_int_distribution<int> dist{0, 1};
+
 public:
   Primate_c()
   {
@@ -449,29 +431,29 @@ protected:
 
   virtual void UseHands()
   {
-    acout() << "Primate_c::UseHands() called" << endl;
+    safe_print("Primate_c::UseHands() called");
 
   }
 
   virtual void Relax()
   {
-    acout() << "Primate_c::Relax() called" << endl;
+    safe_print("Primate_c::Relax() called");
 
   }
   
   virtual void BeActive()
   {
-    acout() << "Primate_c::BeActive() called" << endl;
+    safe_print("Primate_c::BeActive() called");
 
-    int randomAction = rand() % 2 +1; //Generates number between 1 - 2
+    int randomAction = dist(rng); //Generates number between 1 - 2
 
     switch (randomAction)
       {
-      case 1:
+      case 0:
 	//
 	UseHands();
 	break;
-      case 2:
+      case 1:
 	//
 	Relax();
 	break;
@@ -495,7 +477,7 @@ protected:
     mammalBasicFunctions.WillStop();
     while(!mammalBasicFunctions.IsStopped()) {}
 
-    acout() << "Primate_c::SetStopped() called" << endl;
+    safe_print("Primate_c::SetStopped() called");
 
     SetStopped();
   }
@@ -515,6 +497,10 @@ protected:
 /////////////////////////////////////////////////////////////////////////////////////////////////
 class Human_c: public Primate_c
 {
+private:
+// Alustetaan heti määrittelyssä, niin ne ovat käyttövalmiita
+  std::mt19937 rng{std::random_device{}()};
+  std::uniform_int_distribution<int> dist{0, 4};
 public:
   Human_c()
   {
@@ -528,36 +514,36 @@ protected:
 
   virtual void UseHands()
   {
-    acout() << "Human_c::UseHands() called" << endl;
+    safe_print("Human_c::UseHands() called");
 
   }
   
   virtual void BeActive()
   {
-    acout() << "Human_c::BeActive() called" << endl;
+    safe_print("Human_c::BeActive() called");
 	
-    int randomAction = rand() % 5 +1; //Generates number between 1 - 5
+    int randomAction =  dist(rng); //Generates number between 1 - 5
 
     switch (randomAction)
       {
-      case 1:
+      case 0:
 	//
 	UseHands();
 
 	break;
-      case 2:
+      case 1:
 	//
 	Work();
 	break;
-      case 3:
+      case 2:
 	//
 	Hobby();
 	break;
-      case 4:
+      case 3:
 	//
 	Speak();
 	break;
-      case 5:
+      case 4:
 	//
 	Relax();
 	break;
@@ -568,26 +554,24 @@ protected:
 
   virtual void Speak()
   {
-    acout() << "Human_c::Speak() called" << endl;
-    
+    safe_print("Human_c::Speak() called");
   }
   
   virtual void Work()
   {
-    acout() << "Human_c::Work() called" << endl;	
-    
-    UseHands();    
+    safe_print("Human_c::Work() called");
+    UseHands();
   }
   
   virtual void Hobby()
   {
-    acout() << "Human_c::Hobby() called" << endl;
+    safe_print("Human_c::Hobby() called");
 
   }
 
   virtual void Relax()
   {
-    acout() << "Human_c::Relax() called" << endl;
+    safe_print("Human_c::Relax() called");
 
   }
   
@@ -606,7 +590,7 @@ protected:
     mammalBasicFunctions.WillStop();
     while(!mammalBasicFunctions.IsStopped()) {}
 
-    acout() << "Human_c::SetStopped() called" << endl;
+    safe_print("Human_c::SetStopped() called");
 
     SetStopped();
   }
@@ -627,7 +611,7 @@ public:
   
   enum ProjectTaskType: int
   {
-    WRITECODE=1,
+    WRITECODE=0,
     TESTCODE,
     WRITEDOCUMENT,
     ARRANGEMEETING,
@@ -635,10 +619,11 @@ public:
     WRITEREPORT,
     VISITCUSTOMER,
     GIVECUSTOMERSUPPORT,
-    PUBLISHNEWSOFTWARERELEASE
+    PUBLISHNEWSOFTWARERELEASE,
+    COUNT_NUMBEROFTASKS
   };
 
-  static const unsigned int NUMBER_OF_PROJECT_TASK_TYPES;
+  // static const unsigned int NUMBER_OF_PROJECT_TASK_TYPES;
   
   inline const char* ToString(ProjectTaskType v)
   {
@@ -671,7 +656,7 @@ public:
   int reasonCode;
 };
 
-const unsigned int ProjectTask_c::NUMBER_OF_PROJECT_TASK_TYPES=9;
+// const unsigned int ProjectTask_c::NUMBER_OF_PROJECT_TASK_TYPES=9;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                             //
@@ -694,21 +679,20 @@ public:
 
     while(!m_queue.empty())
     {
-      T m= m_queue.front();
+      T m= std::move(m_queue.front());
       m_queue.pop();
 
-      if(m==NULL)
+      /* if(m==NULL)
       {
-	acout() <<
-	"ThreadSafeProjectTaskQueue_c::~ThreadSafeProjectTaskQueue_c() FATAL NULL!"
-	<< endl;
-      }
+	safe_print("ThreadSafeProjectTaskQueue_c::~ThreadSafeProjectTaskQueue_c() FATAL NULL!");
+      }*/
 	
-      acout() <<
-      "ThreadSafeProjectTaskQueue_c_c::~ThreadSafeProjectTaskQueue_c() deleting taskSerialNumber=" <<
-	m->taskSerialNumber << endl;
-      
-      delete(m); m=NULL;
+      if(m)
+      {
+        safe_print("ThreadSafeProjectTaskQueue_c_c::~ThreadSafeProjectTaskQueue_c() deleting taskSerialNumber=" 
+          , m->taskSerialNumber);
+      }
+      // delete(m); m=NULL;
     }
 
   }
@@ -731,7 +715,7 @@ public:
   {
     std::lock_guard<std::mutex> lockThis(m_mutex);
 
-    m_queue.push (val);
+    m_queue.push (std::move(val));
   }
 
   T Pop(bool &isEmpty)
@@ -741,12 +725,12 @@ public:
     if (m_queue.empty())
     {
       isEmpty=true;
-      return(NULL);
+      return T();
     }
 
     isEmpty=false;
     
-    T m= m_queue.front();
+    T m= std::move(m_queue.front());
     m_queue.pop();
 
     return (m);
@@ -762,7 +746,8 @@ private:
   
 };
 
-ThreadSafeProjectTaskQueue_c <ProjectTask_c *> m_ThreadSafeProjectTaskQueue;
+ThreadSafeProjectTaskQueue_c<std::unique_ptr<ProjectTask_c>> m_ThreadSafeProjectTaskQueue;
+// ThreadSafeProjectTaskQueue_c <ProjectTask_c *> m_ThreadSafeProjectTaskQueue;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                             //
@@ -843,22 +828,30 @@ public:
 template <class T>
 class SoftwareProjectManager_c: public Human_c
 {
+private:
+// Alustetaan heti määrittelyssä, niin ne ovat käyttövalmiita
+  std::mt19937 rng{std::random_device{}()};
+  std::uniform_int_distribution<int> dist{0, 9};
+
+
 public:
-  SoftwareProjectManager_c() {}
+  SoftwareProjectManager_c() {
+
+  }
   ~SoftwareProjectManager_c()
   {
     
-    ProjectTask_c *t=NULL;
+    // ProjectTask_c *t=NULL;
     bool isEmpty=false;
     
-    while((t=m_ThreadSafeProjectTaskQueue.Pop(isEmpty)))
+    while(auto t=m_ThreadSafeProjectTaskQueue.Pop(isEmpty))
     {
 	
-      acout() << "SoftwareProjectManager_c <" << GetType() <<
-	">::~SoftwareProjectManager_c() deleting taskSerialNumber=" <<
-	t->taskSerialNumber << endl;
+      safe_print("SoftwareProjectManager_c <", GetType(),
+	    ">::~SoftwareProjectManager_c() deleting taskSerialNumber=",
+	    t->taskSerialNumber);
       
-      delete(t); t=NULL;
+      // delete(t); t=NULL;
     }
      
   }
@@ -873,36 +866,36 @@ protected:
 
   virtual void UseHands()
   {
-    acout() << "SoftwareProjectManager_c::UseHands() called" << endl;
-	
+    safe_print("SoftwareProjectManager_c::UseHands() called");
+
   }
   
   virtual void BeActive()
   {
-    acout() << "SoftwareProjectManager_c::BeActive() called" << endl;
+    safe_print("SoftwareProjectManager_c::BeActive() called");
 
-    int randomAction = rand() % 10 +1; //Generates number between 1 - 10
+    int randomAction =  dist(rng); //Generates number between 1 - 10
 
     switch (randomAction)
       {
-      case 1:
+      case 0:
 	//
 	UseHands();
 
 	break;
-      case 2:
+      case 1:
 	//
 	Work();
 	break;
-      case 3:
+      case 2:
 	//
 	Hobby();
 	break;
-      case 4:
+      case 3:
 	//
 	Speak();
 	break;
-      case 5:
+      case 4:
 	//
 	Relax();
 
@@ -917,34 +910,34 @@ protected:
 
   virtual void Speak()
   {
-    acout() << "SoftwareProjectManager_c::Speak() called" << endl;
+    safe_print("SoftwareProjectManager_c::Speak() called");
 
   }
   virtual void Work()
   {
-    acout() << "SoftwareProjectManager_c::Work() called" << endl;	
+    safe_print("SoftwareProjectManager_c::Work() called");
 
-    int randomAction = rand() % 12 +1; //Generates number between 1 - 12
+    int randomAction = dist(rng); //Generates number between 1 - 12
 
     switch (randomAction)
       {
-      case 1:
+      case 0:
 	// Some not so good project managers only are able to shaking hands on air
 	ShakingHandsOnAir();
 	break;
-      case 2:
+      case 1:
 	WriteReports();
 	break;
-      case 3:
+      case 2:
 	ArrangeMeeting();
 	break;
-      case 4:
+      case 3:
 	AttendMeeting();
 	break;
-      case 5:
+      case 4:
 	VisitCustomer();
 	break;
-      case 6:
+      case 5:
 	ManageBudget();
 	break;
       default:
@@ -956,13 +949,13 @@ protected:
   
   virtual void Hobby()
   {
-    acout() << "SoftwareProjectManager_c::Hobby() called" << endl;
+    safe_print("SoftwareProjectManager_c::Hobby() called");
 
   }
 
   virtual void Relax()
   {
-    acout() << "SoftwareProjectManager_c::Relax() called" << endl;
+    safe_print("SoftwareProjectManager_c::Relax() called");
     
   }
   
@@ -985,7 +978,7 @@ protected:
     mammalBasicFunctions.WillStop();
     while(!mammalBasicFunctions.IsStopped()) {}
 
-    acout() << "SoftwareProjectManager_c::SetStopped() called" << endl;
+    safe_print("SoftwareProjectManager_c::SetStopped() called");
 
     SetStopped();
 
@@ -1012,22 +1005,28 @@ private:
 
   void CreateTasksForSWDevelopers()
   {
-    // acout() << "SoftwareProjectManager_c <" << GetType() <<
+    // safe_print("SoftwareProjectManager_c <" << GetType() <<
     //  ">::CreateTasksForSWDevelopers() called" << endl;
 
     // int randomTaskType = rand() % 10 +1; //Generates number between 1 - 10
-    int randomTaskType = rand() % ((int)ProjectTask_c::NUMBER_OF_PROJECT_TASK_TYPES) +1;
+
+    // Projektipäällikkö (Main-säie tässä esimerkissä) luo tehtäviä
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<int> dist(0, (int)ProjectTask_c::ProjectTaskType::COUNT_NUMBEROFTASKS-1);
+
+    int randomTaskType = dist(rng);
+    // int randomTaskType = rand() % ((int)ProjectTask_c::ProjectTaskType::COUNT_NUMBEROFTASKS) +1;
     //Generate number between [1 - ProjectTask_c::NUMBER_OF_PROJECT_TASK_TYPES]
     
-    ProjectTask_c *m_ProjectTask= new ProjectTask_c(taskSerialNumber++,
-    (ProjectTask_c::ProjectTaskType)randomTaskType);
+    auto m_ProjectTask= std::make_unique<ProjectTask_c>(taskSerialNumber++,
+    static_cast<ProjectTask_c::ProjectTaskType>(randomTaskType));
 
-    acout() << "SoftwareProjectManager_c <" << GetType() <<
-      ">::CreateTasksForSWDevelopers() adding taskSerialNumber=" <<
-      m_ProjectTask->taskSerialNumber << " taskType=" <<
-      m_ProjectTask->ToString(m_ProjectTask->taskType) << endl;      
+    safe_print("SoftwareProjectManager_c <", GetType(),
+      ">::CreateTasksForSWDevelopers() adding taskSerialNumber=",
+      m_ProjectTask->taskSerialNumber , " taskType=" ,
+      m_ProjectTask->ToString(m_ProjectTask->taskType));
     
-    m_ThreadSafeProjectTaskQueue.Push(m_ProjectTask);
+    m_ThreadSafeProjectTaskQueue.Push(std::move(m_ProjectTask));
     
   }
 };
@@ -1050,6 +1049,11 @@ unsigned int SoftwareProjectManager_c<T>::taskSerialNumber=1;
 template <class T>
 class SoftwareDeveloper_c: public Human_c
 {
+private:
+// Alustetaan heti määrittelyssä, niin ne ovat käyttövalmiita
+  std::mt19937 rng{std::random_device{}()};
+  std::uniform_int_distribution<int> dist{0, 9};
+
 public:
   SoftwareDeveloper_c()
   {
@@ -1060,10 +1064,10 @@ public:
   
   ~SoftwareDeveloper_c()
   {
-    acout() << "SoftwareDeveloper_c <" << GetType() <<
-    ">::~SoftwareDeveloper_c() softwareDeveloperInstanceNumber=" <<
-    thisSoftwareDeveloperInstanceNumber << " taskExecutedDuringProject=" <<
-    taskExecutedDuringProject << endl;      
+    safe_print("SoftwareDeveloper_c <", GetType(),
+      ">::~SoftwareDeveloper_c() softwareDeveloperInstanceNumber=",
+      thisSoftwareDeveloperInstanceNumber , " taskExecutedDuringProject=" ,
+      taskExecutedDuringProject);
          
   }
 
@@ -1071,39 +1075,39 @@ protected:
 
   virtual void UseHands()
   {
-    acout() << "SoftwareDeveloper_c::UseHands() called" << endl;
+    safe_print("SoftwareDeveloper_c::UseHands() called");
 
   }
   
   virtual void BeActive()
   {
-    acout() << "SoftwareDeveloper_c::BeActive() called" << endl;
+    safe_print("SoftwareDeveloper_c::BeActive() called");
 
-    int randomAction = rand() % 10 +1; //Generates number between 1 - 10
+    int randomAction = dist(rng); //Generates number between 1 - 10
 
     switch (randomAction)
       {
-      case 1:
+      case 0:
 	//
 	UseHands();
 
 	break;
-      case 2:
+      case 1:
 	//
 	Work();
 
 	break;
-      case 3:
+      case 2:
 	//
 	Hobby();
 
 	break;
-      case 4:
+      case 3:
 	//
 	Speak();
 
 	break;
-      case 5:
+      case 4:
 	//
 	Relax();
 
@@ -1119,12 +1123,12 @@ protected:
 
   virtual void Speak()
   {
-    acout() << "SoftwareDeveloper_c::Speak() called" << endl;
+    safe_print("SoftwareDeveloper_c::Speak() called");
 
   }
   virtual void Work()
   {
-    acout() << "SoftwareDeveloper_c::Work() called" << endl;	
+    safe_print("SoftwareDeveloper_c::Work() called");	
     
     // int randomAction = rand() % 10 +1; //Generates number between 1 - 10
 
@@ -1140,14 +1144,13 @@ protected:
   
   virtual void Hobby()
   {
-    acout() << "SoftwareDeveloper_c::Hobby() called" << endl;
+    safe_print("SoftwareDeveloper_c::Hobby() called");
 
   }
 
   virtual void Relax()
   {
-    acout() << "SoftwareDeveloper_c::Relax() called" << endl;
-    
+    safe_print("SoftwareDeveloper_c::Relax() called");
   }
   
   virtual void Run()
@@ -1165,7 +1168,7 @@ protected:
     mammalBasicFunctions.WillStop();
     while(!mammalBasicFunctions.IsStopped()) {}
 
-    acout() << "SoftwareDeveloper_c::SetStopped() called" << endl;
+    safe_print("SoftwareDeveloper_c::SetStopped() called");
 
     SetStopped();
 
@@ -1180,57 +1183,48 @@ private:
   
   void WriteCode()
   {
-    acout() << "SoftwareDeveloper_c::WriteCode() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::WriteCode() called");
 
   }
   void TestCode()
   {
-    acout() << "SoftwareDeveloper_c::TestCode() called" <<
-      endl;	
+    safe_print("SoftwareDeveloper_c::TestCode() called");
 
   }
   void WriteDocument()
   {
-    acout() << "SoftwareDeveloper_c::WriteDocument() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::WriteDocument() called");
 
   }
   void AttendMeeting()
   {
-    acout() << "SoftwareDeveloper_c::AttendMeeting() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::AttendMeeting() called");
 
   }
 
   void WriteReport()
   {
-    acout() << "SoftwareDeveloper_c::WriteReport() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::WriteReport() called");
 
   }
   void ArrangeMeeting()
   {
-    acout() << "SoftwareDeveloper_c::ArrangeMeeting() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::ArrangeMeeting() called");
 
   }
   void VisitCustomer()
   {
-    acout() << "SoftwareDeveloper_c::VisitCustomer() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::VisitCustomer() called");
 
   }
   void GiveCustomerSupport()
   {
-    acout() << "SoftwareDeveloper_c::GiveCustomerSupport() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::GiveCustomerSupport() called");
 
   }
   void PublishNewSoftwareRelease()
   {
-    acout() << "SoftwareDeveloper_c::PublishNewSoftwareRelease() called" <<
-      endl;
+    safe_print("SoftwareDeveloper_c::PublishNewSoftwareRelease() called");
 
   }
 
@@ -1242,22 +1236,22 @@ private:
 
   void ExecuteTasksFromProjectManager()
   {
-    // acout() << "SoftwareDeveloper_c <" << GetType() <<
+    // safe_print() << "SoftwareDeveloper_c <" << GetType() <<
     //  ">::ExecuteTasksFromProjectManager() called" << endl;
 
     bool isEmpty=true;
-    ProjectTask_c *m_ProjectTask=m_ThreadSafeProjectTaskQueue.Pop(isEmpty);
+    auto m_ProjectTask=m_ThreadSafeProjectTaskQueue.Pop(isEmpty);
 
     if(m_ProjectTask)
     {
       taskExecutedDuringProject++;
       
-      acout() << "SoftwareDeveloper_c[" <<
-	thisSoftwareDeveloperInstanceNumber <<
-	"] <" << GetType() <<
-	">::ExecuteTasksFromProjectManager() retrieving taskSerialNumber=" <<
-	m_ProjectTask->taskSerialNumber << " taskType=" <<
-	m_ProjectTask->ToString(m_ProjectTask->taskType) << endl;      
+      safe_print("SoftwareDeveloper_c[",
+	    thisSoftwareDeveloperInstanceNumber,
+	      "] <" , GetType() ,
+	      ">::ExecuteTasksFromProjectManager() retrieving taskSerialNumber=",
+	      m_ProjectTask->taskSerialNumber , " taskType=" ,
+	      m_ProjectTask->ToString(m_ProjectTask->taskType));
 
       switch (m_ProjectTask->taskType)
       {
@@ -1301,12 +1295,11 @@ private:
       default:
 	// If ProjectTask type is unknown, not defined.
 	//
-	acout() << "Unknown ProjectTaskType" <<
-	  endl;	
+	safe_print("Unknown ProjectTaskType");
 	break;
       }
 
-      delete(m_ProjectTask); m_ProjectTask=NULL;
+      // delete(m_ProjectTask); m_ProjectTask=NULL;
 
     }
     
@@ -1346,10 +1339,10 @@ int main (int argc, char *argv[])
 
   /* initialize random seed: */
   // srand (time(NULL));
-  srand(static_cast <unsigned int> (time(0)));
+  // srand(static_cast <unsigned int> (time(0)));
 
   unsigned int n = thread::hardware_concurrency();
-  cout << n << " concurrent threads are supported by CPU." << endl;
+  safe_print(n ," concurrent threads are supported by CPU.");
 
   std::hash <std::string> hash;
   string password;
@@ -1358,19 +1351,19 @@ int main (int argc, char *argv[])
   unsigned long hashedPassword = 6072375419398818283;
   // correct password is "password"
   
-  cout << "Give Password to Execute Program:";
+  safe_print("Give Password to Execute Program:");
   cin >> password;
 
   unsigned long hashedPasswordGuess = hash(password);
 
   if (hashedPasswordGuess  == hashedPassword)
   {
-    cout << "Password is correct!" << endl;
+    safe_print("Password is correct!");
   }
   else
   {
-    cout << "Password is wrong!" << endl;
-    // cout << "Hash:" << hashedPasswordGuess <<endl;
+    safe_print("Password is wrong!");
+    // safe_print("Hash:" << hashedPasswordGuess <<endl);
     exit(-1);
   }
 
@@ -1384,12 +1377,12 @@ int main (int argc, char *argv[])
   // memset_s is guaranteed that it won't be optimized out
   // Unluckily it is not supported by Fedora 27 Linux
   memset_s(password.c_str(),password.length(),0,password.length());
-  acout() << "memset_s(...) Secured!" << endl;
+  safe_print("memset_s(...) Secured!" << endl);
 #else
   // standard C memset might be optimized out by compiler
   // memset((void *)password.c_str(),0,password.length());
   secure_memset((unsigned char *)password.c_str(),0,password.length());
-  acout() << "secure_memset(...) Secured!" << endl;
+  safe_print("secure_memset(...) Secured!");
 #endif
 
   // std::fill_n could be used too
@@ -1403,12 +1396,12 @@ int main (int argc, char *argv[])
   Mammal_c mammal;
   mammal.Start();
   this_thread::sleep_for(chrono::milliseconds(1000*30));
-  acout() << "Stopping!" << endl;
+  safe_print("Stopping!" << endl);
   mammal.WillStop();
   while(!mammal.IsStopped()) {}
-  acout() << "Stopped!" << endl;
+  safe_print("Stopped!" << endl);
   // mammal.Stop();
-  acout() << "Completed!" << endl;
+  safe_print("Completed!" << endl);
   */
 
   /*
@@ -1419,9 +1412,9 @@ int main (int argc, char *argv[])
   // mammal.Stop(); ??
   primate.WillStop();
   while(!primate.IsStopped()) {}
-  acout() << "Stopped!" << endl;
+  safe_print("Stopped!" << endl);
   // primate.Stop();
-  acout() << "Completed!" << endl;
+  safe_print("Completed!" << endl);
   */
 
   /*
@@ -1431,9 +1424,9 @@ int main (int argc, char *argv[])
   this_thread::sleep_for(chrono::milliseconds(1000*30));
   human.WillStop();
   while(!human.IsStopped()) {}
-  acout() << "Stopped!" << endl;
+  safe_print("Stopped!" << endl);
   // Human.Stop();
-  acout() << "Completed!" << endl;
+  safe_print("Completed!" << endl);
   */
 
   /*
@@ -1443,9 +1436,9 @@ int main (int argc, char *argv[])
   this_thread::sleep_for(chrono::milliseconds(1000*60));
   mainProjectManager.WillStop();
   while(!mainProjectManager.IsStopped()) {}
-  acout() << "Stopped!" << endl;
+  safe_print("Stopped!" << endl);
   // mainProjectManager.Stop();
-  acout() << "Completed!" << endl;
+  safe_print("Completed!" << endl);
   */
 
   /*
@@ -1465,10 +1458,10 @@ int main (int argc, char *argv[])
   while(!mainProjectManager.IsStopped()) {}
   while(!softwareDeveloper.IsStopped()) {}
   
-  acout() << "Stopped!" << endl;
+  safe_print("Stopped!" << endl);
   // mainProjectManager.Stop();
   // softwareDeveloper.Stop();
-  acout() << "Completed!" << endl;
+  safe_print("Completed!" << endl);
 
   */
 
@@ -1497,10 +1490,10 @@ int main (int argc, char *argv[])
     while(!softwareDeveloper[i].IsStopped()) {}
   }
   
-  acout() << "Stopped!" << endl;
+  safe_print("Stopped!");
   // mainProjectManager.Stop();
   // softwareDeveloper.Stop();
-  acout() << "Completed!" << endl;
+  safe_print("Completed!");
 
   // */
 
