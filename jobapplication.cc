@@ -286,7 +286,7 @@ protected:
 
       Breath();
       safe_print("MammalBasicFunction_c::Breath() called");
-      this_thread::sleep_for(chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       
       if((EatCounter++>5)&&(SleepCounter<10)) // not eating when sleeping
       {
@@ -375,7 +375,7 @@ protected:
   {
     while (!IsStopping())
     {
-      this_thread::sleep_for(chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
@@ -466,7 +466,7 @@ protected:
   {
     while (!IsStopping())
     {
-      this_thread::sleep_for(chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
@@ -579,7 +579,7 @@ protected:
   {
     while (!IsStopping())
     {
-      this_thread::sleep_for(chrono::milliseconds(1000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
@@ -964,8 +964,8 @@ protected:
     while (!IsStopping())
     {
       // Project manager has to act faster for multible software developers
-      this_thread::sleep_for(chrono::milliseconds(500));
-      // this_thread::sleep_for(chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
       // If project manager is sleeping or eating, no work done.
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
@@ -1157,7 +1157,7 @@ protected:
   {
     while (!IsStopping())
     {
-      this_thread::sleep_for(chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
 	BeActive();
@@ -1341,18 +1341,18 @@ int main (int argc, char *argv[])
   // srand (time(NULL));
   // srand(static_cast <unsigned int> (time(0)));
 
-  unsigned int n = thread::hardware_concurrency();
+  unsigned int n = std::thread::hardware_concurrency();
   safe_print(n ," concurrent threads are supported by CPU.");
 
   std::hash <std::string> hash;
-  string password;
+  std::string password;
 
   // hash of password
   unsigned long hashedPassword = 6072375419398818283;
   // correct password is "password"
   
   safe_print("Give Password to Execute Program:");
-  cin >> password;
+  std::cin >> password;
 
   unsigned long hashedPasswordGuess = hash(password);
 
@@ -1478,7 +1478,7 @@ int main (int argc, char *argv[])
     softwareDeveloper[i].Start();
 
   // project last 1 minutes
-  this_thread::sleep_for(chrono::milliseconds(1000*60));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
   
   mainProjectManager.WillStop();
   for (auto i=0; i<number_of_software_developers_in_project; i++)
