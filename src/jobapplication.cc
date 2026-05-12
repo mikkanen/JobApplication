@@ -1398,7 +1398,7 @@ int main (int argc, char *argv[])
   // Code section for testing Primate_c
   Primate_c primate;
   primate.Start();
-  this_thread::sleep_for(chrono::milliseconds(1000*30));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000*30));
   // mammal.Stop(); ??
   primate.WillStop();
   while(!primate.IsStopped()) {}
@@ -1423,7 +1423,7 @@ int main (int argc, char *argv[])
   // Code section for testing SoftwareProjectManager_c
   SoftwareProjectManager_c <Agile_c> mainProjectManager;
   mainProjectManager.Start();
-  this_thread::sleep_for(chrono::milliseconds(1000*60));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
   mainProjectManager.WillStop();
   while(!mainProjectManager.IsStopped()) {}
   safe_print("Stopped!" << endl);
@@ -1440,7 +1440,7 @@ int main (int argc, char *argv[])
   softwareDeveloper.Start();
   
   // project last 1 minutes
-  this_thread::sleep_for(chrono::milliseconds(1000*60));
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
   
   mainProjectManager.WillStop();
   softwareDeveloper.WillStop();
