@@ -1,3 +1,0 @@
-/home/mikkanen/Development/JobApplication/build/CMakeFiles/jobapplication.dir
-/home/mikkanen/Development/JobApplication/build/CMakeFiles/edit_cache.dir
-/home/mikkanen/Development/JobApplication/build/CMakeFiles/rebuild_cache.dir
