@@ -18,9 +18,9 @@
 //                                                                                             //
 //                                                                                             //
 //  In the below are instructions for compiling the program in the target system.              //
-//  This program is coded on Fedora 27 Linux-system, but it most probably can be compiled      //
+//  This program is coded on Fedora 27-44 Linux-system, but it most probably can be compiled   //
 //  and executed on ,e.g., MacOS, Windows and Raspberry Pi. It is standard STL program and it  //
-//  follows C++11 standard.                                                                    //
+//  follows C++20 standard.                                                                    //
 //                                                                                             //
 //  Created by Markku Mikkanen on 30/04/2018.                                                  //
 //  Updated by Markku Mikkanen on 12/05/2026                                                   //                      //
@@ -29,9 +29,14 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Compile instructions:
-// []$> g++ -Wall -std=c++11 -fno-builtin-memset jobapplication.cc -o jobapplication -pthread
-// []$> g++ -Wall -std=c++11 jobapplication.cc -o jobapplication -pthread
-// -std=[c++98, c++11, c++14, c++17, c++20]
+// []$> g++ -Wall -std=c++20 -fno-builtin-memset jobapplication.cc -o jobapplication -pthread
+// []$> g++ -Wall -std=c++20 jobapplication.cc -o jobapplication -pthread
+// -std=[c++98, c++11, c++14, c++17, c++20, c++23]
+
+// or:
+// []$> cmake -S . -B build
+// []$> cmake --build build
+// []$> ./build/jobapplication
 
 // ONko vielä pätevä?
 // #define __STDC_WANT_LIB_EXT1__ 1
@@ -54,8 +59,6 @@
 #include <condition_variable>
 #include <random>
 #include <stop_token> // C++20
-
-// using namespace std;
 
 // Moderni säieturvallinen tulostus
 template<typename... Args>
@@ -99,18 +102,6 @@ public:
     m_isStopping = true;
     return true;
 
-    /* if (!m_isRunning)
-      return(false);
-
-    if(m_isStopped)
-      return(false);
-
-    if(m_isStopping)
-      return(false);
-    
-    m_isStopping = true;
-    
-    return(true); */
   }
 
   inline bool IsStopping()
@@ -130,9 +121,6 @@ public:
     if (!m_isRunning)
       return(false);
 
-    /* if (m_isStopped)
-       return; */
-
     if ((!m_isStopping)&&(!m_isStopped))
     {
       WillStop();
@@ -145,10 +133,6 @@ public:
     m_isRunning = false;
     return true;
     
-    // while(!IsStopped()) {}
-
-    
-    // return (Stop());
   }
   
 protected:
@@ -175,20 +159,10 @@ protected:
 
     if (m_isRunning || m_isStopping) return false;
 
-    /* if (m_isRunning)
-      return(false);
-
-    if (m_isStopping)
-      return(false);
- */
-
-    /* if (!m_isStopped)
-      return(false);
-     */
-
     try
     {
       m_thread = std::jthread([this](std::stop_token stoken) {
+            this->m_stopToken = stoken; // Tallennetaan jäsenmuuttujaan, jos halutaan käyttää muualla luokassa
             this->Run(stoken);
         });
 
@@ -210,17 +184,10 @@ protected:
   bool Stop()
   {
     safe_print("Runnable_c::Stop() called: m_isRunning=", m_isRunning, " m_isStopping=", m_isStopping, " m_isStopped=", m_isStopped);
-    
-    if(!m_isRunning)
+
+    if((!m_isRunning)||(!m_isStopped)||(m_isStopping))
       return(false);
 
-    if (m_isStopping)
-      return(false);
-
-    if (!m_isStopped)
-      return(false);
-    
- 
     safe_print("Thread Join");
     try
     {
@@ -236,6 +203,8 @@ protected:
   std::atomic<bool>& GetStoppingAtomic() {
     return m_isStopping;
   }
+
+  std::stop_token m_stopToken; // Tallennetaan token tänne, jotta muut metodit voivat käyttää sitä tarvittaessa
 
 private:
   std::atomic<bool> m_isStopping;
@@ -481,14 +450,13 @@ protected:
 
     switch (randomAction)
       {
-      case 0:
-	//
-	UseHands();
-	break;
-      case 1:
-	//
-	Relax();
-	break;
+        case 0:
+        UseHands();
+        break;
+
+        case 1:
+        Relax();
+        break;
 	
       }
         
@@ -554,32 +522,34 @@ protected:
   {
     safe_print("Human_c::BeActive() called");
 	
-    int randomAction =  dist(rng); //Generates number between 1 - 5
+    int randomAction =  dist(rng); //Generates number between 0 - 4
 
     switch (randomAction)
       {
-      case 0:
-	//
-	UseHands();
+        case 0:
+        UseHands();
+        break;
 
-	break;
-      case 1:
-	//
-	Work();
-	break;
-      case 2:
-	//
-	Hobby();
-	break;
-      case 3:
-	//
-	Speak();
-	break;
-      case 4:
-	//
-	Relax();
-	break;
-	
+        case 1:
+        Work();
+        break;
+
+        case 2:
+        Hobby();
+        break;
+
+        case 3:
+        Speak();
+        break;
+
+        case 4:
+        Relax();
+        break;
+
+        default:
+          safe_print("Human_c::BeActive() called with unknown action");
+          break;
+
       }
     
   }
@@ -714,17 +684,11 @@ public:
       T m= std::move(m_queue.front());
       m_queue.pop();
 
-      /* if(m==NULL)
-      {
-	safe_print("ThreadSafeProjectTaskQueue_c::~ThreadSafeProjectTaskQueue_c() FATAL NULL!");
-      }*/
-	
       if(m)
       {
         safe_print("ThreadSafeProjectTaskQueue_c_c::~ThreadSafeProjectTaskQueue_c() deleting taskSerialNumber=" 
           , m->taskSerialNumber);
       }
-      // delete(m); m=NULL;
     }
 
   }
@@ -771,15 +735,17 @@ public:
     return (m);
   }
 
-  // Estävä Pop, joka odottaa kunnes tehtävä on tai ohjelma sulkeutuu
-  T PopWait(std::atomic<bool>& stopping) {
+  // ThreadSafeProjectTaskQueue_c sisällä
+  T PopWait(std::stop_token stoken) {
     std::unique_lock<std::mutex> lock(m_mutex);
-    m_cond.wait(lock, [this, &stopping] { 
-        return !m_queue.empty() || stopping.load(); 
+    
+    // Odottaa kunnes tehtävä tulee TAI säiettä pyydetään pysähtymään
+    m_cond.wait(lock, [this, &stoken] { 
+        return !m_queue.empty() || stoken.stop_requested(); 
     });
 
     if (m_queue.empty()) return T();
-
+  
     T m = std::move(m_queue.front());
     m_queue.pop();
     return m;
@@ -931,32 +897,30 @@ protected:
 
     switch (randomAction)
       {
-      case 0:
-	//
-	UseHands();
+        case 0:
+        UseHands();
+        break;
 
-	break;
-      case 1:
-	//
-	Work();
-	break;
-      case 2:
-	//
-	Hobby();
-	break;
-      case 3:
-	//
-	Speak();
-	break;
-      case 4:
-	//
-	Relax();
+        case 1:
+        Work();
+        break;
 
-	break;
-      default:
-	// Sometimes Project Manager has to do some job in evening and weekend
-	Work();
-	break;
+        case 2:
+        Hobby();
+        break;
+
+        case 3:
+        Speak();
+        break;
+
+        case 4:
+        Relax();
+        break;
+
+        default:
+        // Sometimes Project Manager has to do some job in evening and weekend
+        Work();
+        break;
       }
     
   }
@@ -974,29 +938,35 @@ protected:
 
     switch (randomAction)
       {
-      case 0:
-	// Some not so good project managers only are able to shaking hands on air
-	ShakingHandsOnAir();
-	break;
-      case 1:
-	WriteReports();
-	break;
-      case 2:
-	ArrangeMeeting();
-	break;
-      case 3:
-	AttendMeeting();
-	break;
-      case 4:
-	VisitCustomer();
-	break;
-      case 5:
-	ManageBudget();
-	break;
-      default:
-	CreateTasksForSWDevelopers();
+        case 0:
+        // Some not so good project managers only are able to shaking hands on air
+        ShakingHandsOnAir();
+        break;
 
-	break;
+        case 1:
+        WriteReports();
+        break;
+
+        case 2:
+        ArrangeMeeting();
+        break;
+
+        case 3:
+        AttendMeeting();
+        break;
+
+        case 4:
+        VisitCustomer();
+        break;
+
+        case 5:
+        ManageBudget();
+        break;
+
+        default:
+        CreateTasksForSWDevelopers();
+
+        break;
       }
   }
   
@@ -1058,10 +1028,6 @@ private:
 
   void CreateTasksForSWDevelopers()
   {
-    // safe_print("SoftwareProjectManager_c <" << GetType() <<
-    //  ">::CreateTasksForSWDevelopers() called" << endl;
-
-    // int randomTaskType = rand() % 10 +1; //Generates number between 1 - 10
 
     // Projektipäällikkö (Main-säie tässä esimerkissä) luo tehtäviä
     std::mt19937 rng(std::random_device{}());
@@ -1218,8 +1184,6 @@ virtual void Run(std::stop_token stoken) override {
   }
 
   mammalBasicFunctions.WillStop();
-  // TÄRKEÄ KORJAUS: Ei busy loopia tähän
-//   mammalBasicFunctions.Join(); 
 
   // jthread hoitaa pysäytyksen, mutta kutsutaan silti nämä siisteyden vuoksi
   mammalBasicFunctions.Stop(); // jthreadilla Stop() on nyt turvallinen
@@ -1229,27 +1193,6 @@ virtual void Run(std::stop_token stoken) override {
   SetStopped();
 }
 
-/*  virtual void Run()
-  {
-    while (!IsStopping())
-    {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-      if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
-      {
-	BeActive();
-      }
-
-    }
-
-    mammalBasicFunctions.WillStop();
-    while(!mammalBasicFunctions.IsStopped()) {}
-
-    safe_print("SoftwareDeveloper_c::SetStopped() called");
-
-    SetStopped();
-
-  }
-*/  
 private:
 
   static unsigned int softwareDeveloperInstanceNumber;
@@ -1311,10 +1254,10 @@ private:
   }
 
 //   void ExecuteTasksFromProjectManager()
-void ExecuteTasksFromProjectManager() {
+void ExecuteTasksFromProjectManager(){
         // Tämä kutsu nyt BLOCKAA (pysäyttää säikeen) kunnes tehtävä tulee
         // välittäen tiedon IsStopping() tilasta
-        auto m_ProjectTask = m_ThreadSafeProjectTaskQueue.PopWait(GetStoppingAtomic());
+        auto m_ProjectTask = m_ThreadSafeProjectTaskQueue.PopWait(m_stopToken);
 
         if (m_ProjectTask) {
             taskExecutedDuringProject++;
@@ -1327,70 +1270,51 @@ void ExecuteTasksFromProjectManager() {
             // Suoritetaan tehtävä (switch-lause säilyy ennallaan...)
         }
 
-        // safe_print() << "SoftwareDeveloper_c <" << GetType() <<
-    //  ">::ExecuteTasksFromProjectManager() called" << endl;
-
-//     bool isEmpty=true;
-//     auto m_ProjectTask=m_ThreadSafeProjectTaskQueue.Pop(isEmpty);
-
-//     if(m_ProjectTask)
-//     {
-//       taskExecutedDuringProject++;
-      
-//       safe_print("SoftwareDeveloper_c[",
-// 	    thisSoftwareDeveloperInstanceNumber,
-//	      "] <" , GetType() ,
-//	      ">::ExecuteTasksFromProjectManager() retrieving taskSerialNumber=",
-//	      m_ProjectTask->taskSerialNumber , " taskType=" ,
-//	      m_ProjectTask->ToString(m_ProjectTask->taskType));
 
       switch (m_ProjectTask->taskType)
       {
         case ProjectTask_c::WRITECODE:
-	//
         WriteCode();
         break;
+
         case ProjectTask_c::TESTCODE:
-	//
 	      TestCode();
 	      break;
-        case ProjectTask_c::WRITEDOCUMENT:
-	//
-        WriteDocument();
-        break;
-        case ProjectTask_c::ARRANGEMEETING:
-	//
-	ArrangeMeeting();
-	break;
-      case ProjectTask_c::ATTENDMEETING:
-	//
-	AttendMeeting();
-	break;
-      case ProjectTask_c::WRITEREPORT:
-	//
-	WriteReport();
-	break;
-      case ProjectTask_c::VISITCUSTOMER:
-	//
-	VisitCustomer();
-	break;
-      case ProjectTask_c::GIVECUSTOMERSUPPORT:
-	//
-	GiveCustomerSupport();
-	break;
-      case ProjectTask_c::PUBLISHNEWSOFTWARERELEASE:
-	//
-	PublishNewSoftwareRelease();
-	break;
-	
-      default:
-	// If ProjectTask type is unknown, not defined.
-	//
-	safe_print("Unknown ProjectTaskType");
-	break;
-      }
 
-      // delete(m_ProjectTask); m_ProjectTask=NULL;
+        case ProjectTask_c::WRITEDOCUMENT:
+	      WriteDocument();
+        break;
+
+        case ProjectTask_c::ARRANGEMEETING:
+      	ArrangeMeeting();
+	      break;
+
+        case ProjectTask_c::ATTENDMEETING:
+        AttendMeeting();
+        break;
+
+        case ProjectTask_c::WRITEREPORT:
+        WriteReport();
+        break;
+
+        case ProjectTask_c::VISITCUSTOMER:
+        VisitCustomer();
+        break;
+
+        case ProjectTask_c::GIVECUSTOMERSUPPORT:
+        GiveCustomerSupport();
+        break;
+
+        case ProjectTask_c::PUBLISHNEWSOFTWARERELEASE:
+        PublishNewSoftwareRelease();
+        break;
+
+        default:
+        // If ProjectTask type is unknown, not defined.
+        //
+        safe_print("Unknown ProjectTaskType");
+        break;
+      }
 
     }
     
@@ -1427,10 +1351,6 @@ void *secure_memset (unsigned char *v,unsigned char c,size_t n)
 // int main (int argc, char *argv[])
 int main ()
 {
-
-  /* initialize random seed: */
-  // srand (time(NULL));
-  // srand(static_cast <unsigned int> (time(0)));
 
   unsigned int n = std::thread::hardware_concurrency();
   safe_print(n ," concurrent threads are supported by CPU.");
@@ -1471,83 +1391,7 @@ int main ()
   
   password.clear();
 
-  
-  /*
-  // Code section for testing Mammal_c
-  Mammal_c mammal;
-  mammal.Start();
-  this_thread::sleep_for(chrono::milliseconds(1000*30));
-  safe_print("Stopping!" << endl);
-  mammal.WillStop();
-  while(!mammal.IsStopped()) {}
-  safe_print("Stopped!" << endl);
-  // mammal.Stop();
-  safe_print("Completed!" << endl);
-  */
 
-  /*
-  // Code section for testing Primate_c
-  Primate_c primate;
-  primate.Start();
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000*30));
-  // mammal.Stop(); ??
-  primate.WillStop();
-  while(!primate.IsStopped()) {}
-  safe_print("Stopped!" << endl);
-  // primate.Stop();
-  safe_print("Completed!" << endl);
-  */
-
-  /*
-  // Code section for testing Human_c
-  Human_c human;
-  human.Start();
-  this_thread::sleep_for(chrono::milliseconds(1000*30));
-  human.WillStop();
-  while(!human.IsStopped()) {}
-  safe_print("Stopped!" << endl);
-  // Human.Stop();
-  safe_print("Completed!" << endl);
-  */
-
-  /*
-  // Code section for testing SoftwareProjectManager_c
-  SoftwareProjectManager_c <Agile_c> mainProjectManager;
-  mainProjectManager.Start();
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
-  mainProjectManager.WillStop();
-  while(!mainProjectManager.IsStopped()) {}
-  safe_print("Stopped!" << endl);
-  // mainProjectManager.Stop();
-  safe_print("Completed!" << endl);
-  */
-
-  /*
-  // Code section for testing minimal SoftwareProject
-  SoftwareProjectManager_c <Agile_c> mainProjectManager;
-  SoftwareDeveloper_c <Agile_c> softwareDeveloper;
-  
-  mainProjectManager.Start();
-  softwareDeveloper.Start();
-  
-  // project last 1 minutes
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
-  
-  mainProjectManager.WillStop();
-  softwareDeveloper.WillStop();
-  
-  while(!mainProjectManager.IsStopped()) {}
-  while(!softwareDeveloper.IsStopped()) {}
-  
-  safe_print("Stopped!" << endl);
-  // mainProjectManager.Stop();
-  // softwareDeveloper.Stop();
-  safe_print("Completed!" << endl);
-
-  */
-
-
-  // /*
   // Code section for testing group of 12 software developers in the SoftwareProject
   const int number_of_software_developers_in_project=12;
   
