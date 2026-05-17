@@ -76,15 +76,15 @@ CMakeFiles/jobapplication.dir/src/jobapplication.cc.o: CMakeFiles/jobapplication
 CMakeFiles/jobapplication.dir/src/jobapplication.cc.o: /home/mikkanen/Development/JobApplication/src/jobapplication.cc
 CMakeFiles/jobapplication.dir/src/jobapplication.cc.o: CMakeFiles/jobapplication.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/mikkanen/Development/JobApplication/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/jobapplication.dir/src/jobapplication.cc.o"
-	/usr/lib64/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/jobapplication.dir/src/jobapplication.cc.o -MF CMakeFiles/jobapplication.dir/src/jobapplication.cc.o.d -o CMakeFiles/jobapplication.dir/src/jobapplication.cc.o -c /home/mikkanen/Development/JobApplication/src/jobapplication.cc
+	/usr/lib64/ccache/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/jobapplication.dir/src/jobapplication.cc.o -MF CMakeFiles/jobapplication.dir/src/jobapplication.cc.o.d -o CMakeFiles/jobapplication.dir/src/jobapplication.cc.o -c /home/mikkanen/Development/JobApplication/src/jobapplication.cc
 
 CMakeFiles/jobapplication.dir/src/jobapplication.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/jobapplication.dir/src/jobapplication.cc.i"
-	/usr/lib64/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mikkanen/Development/JobApplication/src/jobapplication.cc > CMakeFiles/jobapplication.dir/src/jobapplication.cc.i
+	/usr/lib64/ccache/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/mikkanen/Development/JobApplication/src/jobapplication.cc > CMakeFiles/jobapplication.dir/src/jobapplication.cc.i
 
 CMakeFiles/jobapplication.dir/src/jobapplication.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/jobapplication.dir/src/jobapplication.cc.s"
-	/usr/lib64/ccache/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mikkanen/Development/JobApplication/src/jobapplication.cc -o CMakeFiles/jobapplication.dir/src/jobapplication.cc.s
+	/usr/lib64/ccache/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/mikkanen/Development/JobApplication/src/jobapplication.cc -o CMakeFiles/jobapplication.dir/src/jobapplication.cc.s
 
 # Object files for target jobapplication
 jobapplication_OBJECTS = \

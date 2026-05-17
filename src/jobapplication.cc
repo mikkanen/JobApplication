@@ -76,7 +76,7 @@ class Runnable_c
 {
 public:
   
-  Runnable_c() : m_isStopping(false), m_isStopped(true), m_isRunning(false), m_thread()
+  Runnable_c() : m_isStopping(false), m_isStopped(true), m_isRunning(false) // , m_thread()
   {
     safe_print("Runnable_c::Runnable_c() called");
   }
@@ -84,7 +84,6 @@ public:
   virtual ~Runnable_c()
   {
     safe_print("Runnable_c::~Runnable_c() called");
-    
     Join();
   }
 
@@ -95,7 +94,12 @@ public:
   {
     safe_print("Runnable_c::WillStop() called");
      
-    if (!m_isRunning)
+    if (!m_isRunning || m_isStopped || m_isStopping) return false;
+
+    m_isStopping = true;
+    return true;
+
+    /* if (!m_isRunning)
       return(false);
 
     if(m_isStopped)
@@ -106,7 +110,7 @@ public:
     
     m_isStopping = true;
     
-    return(true);
+    return(true); */
   }
 
   inline bool IsStopping()
@@ -134,10 +138,17 @@ public:
       WillStop();
     }
     
-    while(!IsStopped()) {}
+    std::unique_lock<std::mutex> lock(m_stopMutex);
+    m_stopCondition.wait(lock, [this] { return m_isStopped.load(); });
+
+    if (m_thread.joinable()) m_thread.join();
+    m_isRunning = false;
+    return true;
+    
+    // while(!IsStopped()) {}
 
     
-    return (Stop());
+    // return (Stop());
   }
   
 protected:
@@ -147,6 +158,7 @@ protected:
   {
     m_isStopping = false;
     m_isStopped = true;
+    m_stopCondition.notify_all(); // Ilmoitetaan odottajille (Join)
   }
 
   inline bool IsRunning()
@@ -161,15 +173,19 @@ protected:
   {
     safe_print("Runnable_c::Start() called: m_isRunning=", m_isRunning, " m_isStopping=", m_isStopping, " m_isStopped=", m_isStopped);
 
-    if (m_isRunning)
+    if (m_isRunning || m_isStopping) return false;
+
+    /* if (m_isRunning)
       return(false);
 
     if (m_isStopping)
       return(false);
+ */
 
-    if (!m_isStopped)
+    /* if (!m_isStopped)
       return(false);
-    
+     */
+
     try
     {
       m_thread = std::thread(&Runnable_c::Run, this);
@@ -209,12 +225,20 @@ protected:
     return(true);
   }
   
+  // Palauttaa viittauksen atomiseen muuttujaan, jotta PopWait voi tarkkailla sitä
+  std::atomic<bool>& GetStoppingAtomic() {
+    return m_isStopping;
+  }
+
 private:
   std::atomic<bool> m_isStopping;
   std::atomic<bool> m_isStopped;
   std::atomic<bool> m_isRunning;
 
   std::thread m_thread;
+
+  std::mutex m_stopMutex;
+  std::condition_variable m_stopCondition;
 
 };
 
@@ -717,6 +741,9 @@ public:
     std::lock_guard<std::mutex> lockThis(m_mutex);
 
     m_queue.push (std::move(val));
+
+    m_cond.notify_one(); // Herätetään yksi odottava kehittäjä
+
   }
 
   T Pop(bool &isEmpty)
@@ -737,10 +764,28 @@ public:
     return (m);
   }
 
-  
+  // Estävä Pop, joka odottaa kunnes tehtävä on tai ohjelma sulkeutuu
+  T PopWait(std::atomic<bool>& stopping) {
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_cond.wait(lock, [this, &stopping] { 
+        return !m_queue.empty() || stopping.load(); 
+    });
+
+    if (m_queue.empty()) return T();
+
+    T m = std::move(m_queue.front());
+    m_queue.pop();
+    return m;
+  }
+
+  // Lisää notify_all sulkemista varten
+  void WakeAll() { m_cond.notify_all(); }
+
 private:
   std::queue<T> m_queue;
   /* static */ std::mutex m_mutex;
+
+  std::condition_variable m_cond;
 
   // m_mutex.lock();
   // m_mutex.unlock();
@@ -1127,7 +1172,7 @@ protected:
     safe_print("SoftwareDeveloper_c::Speak() called");
 
   }
-  virtual void Work()
+  virtual void Work() override
   {
     safe_print("SoftwareDeveloper_c::Work() called");	
     
@@ -1154,7 +1199,26 @@ protected:
     safe_print("SoftwareDeveloper_c::Relax() called");
   }
   
-  virtual void Run()
+virtual void Run() override {
+  while (!IsStopping()) {
+    // Jos kehittäjä ei nuku tai syö, hän yrittää tehdä töitä
+    if (!mammalBasicFunctions.IsSleeping() && !mammalBasicFunctions.IsEating()) {
+        BeActive(); 
+    } else {
+        // Jos on tauolla, pidetään pieni uni ettei loop pyöri liian lujaa
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+  }
+
+  mammalBasicFunctions.WillStop();
+  // TÄRKEÄ KORJAUS: Ei busy loopia tähän
+  mammalBasicFunctions.Join(); 
+
+  safe_print("SoftwareDeveloper_c::SetStopped() called");
+  SetStopped();
+}
+
+/*  virtual void Run()
   {
     while (!IsStopping())
     {
@@ -1174,7 +1238,7 @@ protected:
     SetStopped();
 
   }
-  
+*/  
 private:
 
   static unsigned int softwareDeveloperInstanceNumber;
@@ -1235,40 +1299,55 @@ private:
     return typeid(T).name();
   }
 
-  void ExecuteTasksFromProjectManager()
-  {
-    // safe_print() << "SoftwareDeveloper_c <" << GetType() <<
+//   void ExecuteTasksFromProjectManager()
+void ExecuteTasksFromProjectManager() {
+        // Tämä kutsu nyt BLOCKAA (pysäyttää säikeen) kunnes tehtävä tulee
+        // välittäen tiedon IsStopping() tilasta
+        auto m_ProjectTask = m_ThreadSafeProjectTaskQueue.PopWait(GetStoppingAtomic());
+
+        if (m_ProjectTask) {
+            taskExecutedDuringProject++;
+            safe_print("SoftwareDeveloper_c[", thisSoftwareDeveloperInstanceNumber, 
+                       "] suorittaa tehtävää: ", m_ProjectTask->ToString(m_ProjectTask->taskType));
+            
+            // Simuloidaan työn kestoa, ettei kaikki tapahdu silmänräpäyksessä
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            
+            // Suoritetaan tehtävä (switch-lause säilyy ennallaan...)
+        }
+
+        // safe_print() << "SoftwareDeveloper_c <" << GetType() <<
     //  ">::ExecuteTasksFromProjectManager() called" << endl;
 
-    bool isEmpty=true;
-    auto m_ProjectTask=m_ThreadSafeProjectTaskQueue.Pop(isEmpty);
+//     bool isEmpty=true;
+//     auto m_ProjectTask=m_ThreadSafeProjectTaskQueue.Pop(isEmpty);
 
-    if(m_ProjectTask)
-    {
-      taskExecutedDuringProject++;
+//     if(m_ProjectTask)
+//     {
+//       taskExecutedDuringProject++;
       
-      safe_print("SoftwareDeveloper_c[",
-	    thisSoftwareDeveloperInstanceNumber,
-	      "] <" , GetType() ,
-	      ">::ExecuteTasksFromProjectManager() retrieving taskSerialNumber=",
-	      m_ProjectTask->taskSerialNumber , " taskType=" ,
-	      m_ProjectTask->ToString(m_ProjectTask->taskType));
+//       safe_print("SoftwareDeveloper_c[",
+// 	    thisSoftwareDeveloperInstanceNumber,
+//	      "] <" , GetType() ,
+//	      ">::ExecuteTasksFromProjectManager() retrieving taskSerialNumber=",
+//	      m_ProjectTask->taskSerialNumber , " taskType=" ,
+//	      m_ProjectTask->ToString(m_ProjectTask->taskType));
 
       switch (m_ProjectTask->taskType)
       {
-      case ProjectTask_c::WRITECODE:
+        case ProjectTask_c::WRITECODE:
 	//
-	WriteCode();
-	break;
-      case ProjectTask_c::TESTCODE:
+        WriteCode();
+        break;
+        case ProjectTask_c::TESTCODE:
 	//
-	TestCode();
-	break;
-      case ProjectTask_c::WRITEDOCUMENT:
+	      TestCode();
+	      break;
+        case ProjectTask_c::WRITEDOCUMENT:
 	//
-	WriteDocument();
-	break;
-      case ProjectTask_c::ARRANGEMEETING:
+        WriteDocument();
+        break;
+        case ProjectTask_c::ARRANGEMEETING:
 	//
 	ArrangeMeeting();
 	break;
@@ -1304,7 +1383,6 @@ private:
 
     }
     
-  }
 };
 
 template <class T>
@@ -1335,7 +1413,8 @@ void *secure_memset (unsigned char *v,unsigned char c,size_t n)
 // Standard main function                                                                      //
 //                                                                                             //
 /////////////////////////////////////////////////////////////////////////////////////////////////
-int main (int argc, char *argv[])
+// int main (int argc, char *argv[])
+int main ()
 {
 
   /* initialize random seed: */
@@ -1468,17 +1547,23 @@ int main (int argc, char *argv[])
   for (auto i=0; i<number_of_software_developers_in_project; i++)
     softwareDeveloper[i].Start();
 
-  // project last 1 minutes
+  // project last 60 minutes
   std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
   
   mainProjectManager.WillStop();
   for (auto i=0; i<number_of_software_developers_in_project; i++)
     softwareDeveloper[i].WillStop();
   
-  while(!mainProjectManager.IsStopped()) {}
+  // HERÄTETÄÄN JONO: Tämä vapauttaa PopWait-metodissa jumissa olevat säikeet
+  m_ThreadSafeProjectTaskQueue.WakeAll();
+
+  // while(!mainProjectManager.IsStopped()) {}
+  mainProjectManager.Join();
+
   for (auto i=0; i<number_of_software_developers_in_project; i++)
   {  
-    while(!softwareDeveloper[i].IsStopped()) {}
+  //   while(!softwareDeveloper[i].IsStopped()) {}
+    softwareDeveloper[i].Join();
   }
   
   safe_print("Stopped!");
