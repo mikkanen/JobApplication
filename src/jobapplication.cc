@@ -291,27 +291,27 @@ protected:
       
       if((EatCounter++>5)&&(SleepCounter<10)) // not eating when sleeping
       {
-	m_isEating=true;
+	      m_isEating=true;
 	
-	EatCounter=0;
-	Eat();
+      	EatCounter=0;
+	      Eat();
       }
       else
       {
-	m_isEating=false;
+	      m_isEating=false;
       }
 
       if(SleepCounter++>10)
       {
-	m_isSleeping=true;
+	      m_isSleeping=true;
 	
-	Sleep();
+	      Sleep();
 
-	SleepCounter=(SleepCounter > 20)?0:SleepCounter;
+	      SleepCounter=(SleepCounter > 20)?0:SleepCounter;
       }
       else
       {
-	m_isSleeping=false;
+	      m_isSleeping=false;
       }
     }
 
@@ -379,7 +379,7 @@ protected:
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
-	BeActive();
+	      BeActive();
       }
 
     }
@@ -442,7 +442,7 @@ protected:
 
   }
   
-  virtual void BeActive()
+  virtual void BeActive() override
   {
     safe_print("Primate_c::BeActive() called");
 
@@ -512,13 +512,13 @@ public:
   }
 protected:
 
-  virtual void UseHands()
+  virtual void UseHands() override
   {
     safe_print("Human_c::UseHands() called");
 
   }
   
-  virtual void BeActive()
+  virtual void BeActive() override
   {
     safe_print("Human_c::BeActive() called");
 	
@@ -571,7 +571,7 @@ protected:
 
   }
 
-  virtual void Relax()
+  virtual void Relax() override
   {
     safe_print("Human_c::Relax() called");
 
@@ -883,13 +883,13 @@ public:
 
 protected:
 
-  virtual void UseHands()
+  virtual void UseHands() override
   {
     safe_print("SoftwareProjectManager_c::UseHands() called");
 
   }
   
-  virtual void BeActive()
+  virtual void BeActive() override
   {
     safe_print("SoftwareProjectManager_c::BeActive() called");
 
@@ -925,12 +925,12 @@ protected:
     
   }
 
-  virtual void Speak()
+  virtual void Speak()  override
   {
     safe_print("SoftwareProjectManager_c::Speak() called");
 
   }
-  virtual void Work()
+  virtual void Work() override
   {
     safe_print("SoftwareProjectManager_c::Work() called");
 
@@ -970,13 +970,13 @@ protected:
       }
   }
   
-  virtual void Hobby()
+  virtual void Hobby() override
   {
     safe_print("SoftwareProjectManager_c::Hobby() called");
 
   }
 
-  virtual void Relax()
+  virtual void Relax() override
   {
     safe_print("SoftwareProjectManager_c::Relax() called");
     
@@ -1092,13 +1092,13 @@ public:
 
 protected:
 
-  virtual void UseHands()
+  virtual void UseHands() override
   {
     safe_print("SoftwareDeveloper_c::UseHands() called");
 
   }
   
-  virtual void BeActive()
+  virtual void BeActive() override
   {
     safe_print("SoftwareDeveloper_c::BeActive() called");
 
@@ -1106,41 +1106,36 @@ protected:
 
     switch (randomAction)
       {
-      case 0:
-	//
-	UseHands();
+        case 0:
+        UseHands();
+        break;
 
-	break;
-      case 1:
-	//
-	Work();
+        case 1:
+        Work();
+        break;
 
-	break;
-      case 2:
-	//
-	Hobby();
+        case 2:
+        Hobby();
+        break;
 
-	break;
-      case 3:
-	//
-	Speak();
+        case 3:
+        Speak();
+        break;
 
-	break;
-      case 4:
-	//
-	Relax();
+        case 4:
+        Relax();
+        break;
 
-	break;
-      default:
-	// Sometimes SoftwareDeveloper_c has to do some job in evening and weekend
-	Work();
+        default:
+        // Sometimes SoftwareDeveloper_c has to do some job in evening and weekend
+        Work();
 
-	break;
+        break;
       }
     
   }
 
-  virtual void Speak()
+  virtual void Speak() override
   {
     safe_print("SoftwareDeveloper_c::Speak() called");
 
@@ -1161,14 +1156,14 @@ protected:
     //   }
   }
   
-  virtual void Hobby()
+  virtual void Hobby() override
   {
     safe_print("SoftwareDeveloper_c::Hobby() called");
 
   }
 
-  virtual void Relax()
-  {
+  virtual void Relax()  override
+  { 
     safe_print("SoftwareDeveloper_c::Relax() called");
   }
   
@@ -1268,54 +1263,55 @@ void ExecuteTasksFromProjectManager(){
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
             
             // Suoritetaan tehtävä (switch-lause säilyy ennallaan...)
+
+          switch (m_ProjectTask->taskType)
+          {
+            case ProjectTask_c::WRITECODE:
+            WriteCode();
+            break;
+
+            case ProjectTask_c::TESTCODE:
+            TestCode();
+            break;
+
+            case ProjectTask_c::WRITEDOCUMENT:
+            WriteDocument();
+            break;
+
+            case ProjectTask_c::ARRANGEMEETING:
+            ArrangeMeeting();
+            break;
+
+            case ProjectTask_c::ATTENDMEETING:
+            AttendMeeting();
+            break;
+
+            case ProjectTask_c::WRITEREPORT:
+            WriteReport();
+            break;
+
+            case ProjectTask_c::VISITCUSTOMER:
+            VisitCustomer();
+            break;
+
+            case ProjectTask_c::GIVECUSTOMERSUPPORT:
+            GiveCustomerSupport();
+            break;
+
+            case ProjectTask_c::PUBLISHNEWSOFTWARERELEASE:
+            PublishNewSoftwareRelease();
+            break;
+
+            default:
+            // If ProjectTask type is unknown, not defined.
+            //
+            safe_print("Unknown ProjectTaskType");
+            break;
+          }
+        } else {
+            // Jos tehtävä on null, se tarkoittaa että PopWait heräsi ilman tehtävää, todennäköisesti siksi että projekti on loppumassa
+            safe_print("SoftwareDeveloper_c[", thisSoftwareDeveloperInstanceNumber, "] ei saanut tehtävää, projekti saattaa olla loppumassa.");
         }
-
-
-      switch (m_ProjectTask->taskType)
-      {
-        case ProjectTask_c::WRITECODE:
-        WriteCode();
-        break;
-
-        case ProjectTask_c::TESTCODE:
-	      TestCode();
-	      break;
-
-        case ProjectTask_c::WRITEDOCUMENT:
-	      WriteDocument();
-        break;
-
-        case ProjectTask_c::ARRANGEMEETING:
-      	ArrangeMeeting();
-	      break;
-
-        case ProjectTask_c::ATTENDMEETING:
-        AttendMeeting();
-        break;
-
-        case ProjectTask_c::WRITEREPORT:
-        WriteReport();
-        break;
-
-        case ProjectTask_c::VISITCUSTOMER:
-        VisitCustomer();
-        break;
-
-        case ProjectTask_c::GIVECUSTOMERSUPPORT:
-        GiveCustomerSupport();
-        break;
-
-        case ProjectTask_c::PUBLISHNEWSOFTWARERELEASE:
-        PublishNewSoftwareRelease();
-        break;
-
-        default:
-        // If ProjectTask type is unknown, not defined.
-        //
-        safe_print("Unknown ProjectTaskType");
-        break;
-      }
-
     }
     
 };
