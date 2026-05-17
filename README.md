@@ -20,9 +20,11 @@ tietysti main() vielä yksi säie)
 
 Ohjelmakoodin alussa on ohjeet ohjelman kääntämiseksi kohdejärjestelmässä. Ohjelma on
 koodattu Fedora 27 Linux-järjestelmässä, mutta pitäisi olla myös käännettävissä esim MacOS:lla.
-Ohjelma on C++11 standardin mukainen.
+Ohjelma on C++17 standardin mukainen. Ohjelma on multi platform ohjelma, joka toimii hyvin monessa
+ympäristössä ja myös Raspberry Pi-tietokoneissa.
 
 Created by Markku Mikkanen on 30/04/2018.
+Updated by Markku Mikkanen on 17/05/2026.
 
-Copyright © 2018 Markku Mikkanen. All rights reserved.
+Copyright © 2018-2026 Markku Mikkanen. All rights reserved.
 
