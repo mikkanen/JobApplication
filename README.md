@@ -19,7 +19,7 @@ varsinaisen työn.
 tietysti main() vielä yksi säie)
 
 Ohjelmakoodin alussa on ohjeet ohjelman kääntämiseksi kohdejärjestelmässä. Ohjelma on
-koodattu Fedora 27 Linux-järjestelmässä, mutta pitäisi olla myös käännettävissä esim MacOS:lla.
+koodattu Fedora 27-44 Linux-järjestelmissä, mutta pitäisi olla myös käännettävissä esim MacOS:lla.
 Ohjelma on C++17 standardin mukainen. Ohjelma on multi platform ohjelma, joka toimii hyvin monessa
 ympäristössä ja myös Raspberry Pi-tietokoneissa.
 
