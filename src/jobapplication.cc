@@ -53,7 +53,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <random>
-
+#include <stop_token> // C++20
 
 // using namespace std;
 
@@ -84,7 +84,7 @@ public:
   virtual ~Runnable_c()
   {
     safe_print("Runnable_c::~Runnable_c() called");
-    Join();
+    // Join();
   }
 
   Runnable_c(Runnable_c const&) = delete;
@@ -188,7 +188,11 @@ protected:
 
     try
     {
-      m_thread = std::thread(&Runnable_c::Run, this);
+      m_thread = std::jthread([this](std::stop_token stoken) {
+            this->Run(stoken);
+        });
+
+      // m_thread = std::jthread(&Runnable_c::Run, this);
     } catch(...) { }
 
     m_isRunning = true;
@@ -198,7 +202,10 @@ protected:
     return(true);
   }
 
-  virtual void Run() = 0;
+  // virtual void Run() = 0;
+
+  // Päivitetty Run-metodi ottaa vastaan stop_tokenin
+  virtual void Run(std::stop_token stoken) = 0;
   
   bool Stop()
   {
@@ -235,7 +242,7 @@ private:
   std::atomic<bool> m_isStopped;
   std::atomic<bool> m_isRunning;
 
-  std::thread m_thread;
+  std::jthread m_thread;
 
   std::mutex m_stopMutex;
   std::condition_variable m_stopCondition;
@@ -304,9 +311,9 @@ protected:
   }
   void Breath() {}
 
-  virtual void Run()
+  virtual void Run(std::stop_token stoken) override
   {
-    while (!IsStopping())
+    while (!stoken.stop_requested())
     {
 
       Breath();
@@ -396,9 +403,9 @@ protected:
 
   // virtual void UseLimbsForEat() {}
   
-  virtual void Run()
+  virtual void Run(std::stop_token stoken) override
   {
-    while (!IsStopping())
+    while (!stoken.stop_requested())
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
@@ -487,9 +494,9 @@ protected:
         
   }
 
-  virtual void Run()
+  virtual void Run(std::stop_token stoken) override
   {
-    while (!IsStopping())
+    while (!stoken.stop_requested())
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
@@ -600,9 +607,9 @@ protected:
 
   }
   
-  virtual void Run()
+  virtual void Run(std::stop_token stoken) override
   {
-    while (!IsStopping())
+    while (!stoken.stop_requested())
     {
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
@@ -1005,9 +1012,9 @@ protected:
     
   }
   
-  virtual void Run()
+  virtual void Run(std::stop_token stoken) override
   {
-    while (!IsStopping())
+    while (!stoken.stop_requested())
     {
       // Project manager has to act faster for multible software developers
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -1199,8 +1206,8 @@ protected:
     safe_print("SoftwareDeveloper_c::Relax() called");
   }
   
-virtual void Run() override {
-  while (!IsStopping()) {
+virtual void Run(std::stop_token stoken) override {
+  while (!stoken.stop_requested()) {
     // Jos kehittäjä ei nuku tai syö, hän yrittää tehdä töitä
     if (!mammalBasicFunctions.IsSleeping() && !mammalBasicFunctions.IsEating()) {
         BeActive(); 
@@ -1212,7 +1219,11 @@ virtual void Run() override {
 
   mammalBasicFunctions.WillStop();
   // TÄRKEÄ KORJAUS: Ei busy loopia tähän
-  mammalBasicFunctions.Join(); 
+//   mammalBasicFunctions.Join(); 
+
+  // jthread hoitaa pysäytyksen, mutta kutsutaan silti nämä siisteyden vuoksi
+  mammalBasicFunctions.Stop(); // jthreadilla Stop() on nyt turvallinen
+  SetStopped();
 
   safe_print("SoftwareDeveloper_c::SetStopped() called");
   SetStopped();
