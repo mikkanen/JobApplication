@@ -1003,18 +1003,21 @@ protected:
       // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
       // If project manager is sleeping or eating, no work done.
-      if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
+      if(!mammalBasicFunctions.IsSleeping()&&(!mammalBasicFunctions.IsEating()))
       {
-	BeActive();
+	      BeActive();
       }
 
     }
 
+    // 2. VASTA SILMUKAN JÄLKEEN lopetetaan sisäiset prosessit
+    safe_print("Thread ending, shutting down vital functions...");
+
     mammalBasicFunctions.WillStop();
-    while(!mammalBasicFunctions.IsStopped()) {}
+    mammalBasicFunctions.Join(); // Pysäytetään sisäinen elintoiminto-säie
 
-    safe_print("SoftwareProjectManager_c::SetStopped() called");
-
+    // jthread hoitaa pysäytyksen, mutta kutsutaan silti nämä siisteyden vuoksi
+    mammalBasicFunctions.Stop(); // jthreadilla Stop() on nyt turvallinen
     SetStopped();
 
   }
@@ -1182,7 +1185,7 @@ protected:
 virtual void Run(std::stop_token stoken) override {
   while (!stoken.stop_requested()) {
     // Jos kehittäjä ei nuku tai syö, hän yrittää tehdä töitä
-    if (!mammalBasicFunctions.IsSleeping() && !mammalBasicFunctions.IsEating()) {
+    if ((!mammalBasicFunctions.IsSleeping()) && (!mammalBasicFunctions.IsEating())) {
         BeActive(); 
     } else {
         // Jos on tauolla, pidetään pieni uni ettei loop pyöri liian lujaa
