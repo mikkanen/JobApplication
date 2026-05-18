@@ -27,13 +27,18 @@ Copyright © 2018-2026 Markku Mikkanen. All rights reserved.
 
 Compile instructions:
 []$> g++ -Wall -std=c++20 -fno-builtin-memset jobapplication.cc -o jobapplication -pthread
+
 []$> g++ -Wall -std=c++20 jobapplication.cc -o jobapplication -pthread
+
 -std=[c++98, c++11, c++14, c++17, c++20, c++23]
 
 or:
 []$> cmake -S . -B build
+
 []$> cmake --build build
+
 []$> ./build/jobapplication
+
 
 # JobApplication
 
