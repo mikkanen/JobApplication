@@ -23,8 +23,8 @@
 //  follows C++20 standard.                                                                    //
 //                                                                                             //
 //  Created by Markku Mikkanen on 30/04/2018.                                                  //
-//  Updated by Markku Mikkanen on 12/05/2026                                                   //                      //
-//  Copyright © 2018 Markku Mikkanen. All rights reserved.                                     //
+//  Updated by Markku Mikkanen on 17/05/2026                                                   //                      //
+//  Copyright © 2018-2026 Markku Mikkanen. All rights reserved.                                     //
 //                                                                                             //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -87,6 +87,10 @@ public:
   virtual ~Runnable_c()
   {
     safe_print("Runnable_c::~Runnable_c() called");
+
+    // jthread hoitaa automaattisen pysäytyksen ja joinin,
+    // mutta varmistetaan signaali.
+    WillStop();
     // Join();
   }
 
@@ -100,6 +104,8 @@ public:
     if (!m_isRunning || m_isStopped || m_isStopping) return false;
 
     m_isStopping = true;
+    m_thread.request_stop(); // TÄMÄ PUUTTUI: Lähettää signaalin stop_tokenille,
+    //  joka on nyt tallennettu jäsenmuuttujaan, jotta Run-metodi voi tarkkailla sitä
     return true;
 
   }
@@ -140,6 +146,8 @@ protected:
 
   void SetStopped()
   {
+    safe_print("Runnable_c::SetStopped() called");
+
     m_isStopping = false;
     m_isStopped = true;
     m_stopCondition.notify_all(); // Ilmoitetaan odottajille (Join)
@@ -207,9 +215,9 @@ protected:
   std::stop_token m_stopToken; // Tallennetaan token tänne, jotta muut metodit voivat käyttää sitä tarvittaessa
 
 private:
-  std::atomic<bool> m_isStopping;
-  std::atomic<bool> m_isStopped;
-  std::atomic<bool> m_isRunning;
+  std::atomic<bool> m_isStopping{false};
+  std::atomic<bool> m_isStopped{true};
+  std::atomic<bool> m_isRunning{false};
 
   std::jthread m_thread;
 
@@ -226,7 +234,7 @@ private:
 // and eating                                                                                  //
 //                                                                                             //
 /////////////////////////////////////////////////////////////////////////////////////////////////
-class MammalBasicFunctions_c: public Runnable_c
+class MammalBasicFunctions_c: public virtual Runnable_c
 {
 public:
   MammalBasicFunctions_c():m_isEating(false),m_isSleeping(false) 
@@ -236,7 +244,7 @@ public:
     
     // Start();
   }
-  ~MammalBasicFunctions_c()
+  virtual ~MammalBasicFunctions_c()
   {
 
     // Join();
@@ -338,13 +346,13 @@ private:
 // MammalBasicFunctions_c                                                                      //
 //                                                                                             //
 /////////////////////////////////////////////////////////////////////////////////////////////////
-class Mammal_c: public Runnable_c
+class Mammal_c: public virtual Runnable_c
 {
 public:
   Mammal_c()
   {
   }
-  ~Mammal_c()
+  virtual ~Mammal_c()
   {
     // Join();
     // mammalBasicFunctions.Join();
@@ -376,8 +384,8 @@ protected:
   {
     while (!stoken.stop_requested())
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-      if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      if(!mammalBasicFunctions.IsSleeping()&&(!mammalBasicFunctions.IsEating()))
       {
 	      BeActive();
       }
@@ -385,7 +393,8 @@ protected:
     }
 
     mammalBasicFunctions.WillStop();
-    while(!mammalBasicFunctions.IsStopped()) {}
+    // while(!mammalBasicFunctions.IsStopped()) {}
+    mammalBasicFunctions.Join(); // Korvattu busy-wait Joinilla
 
     safe_print("Mammal_c::SetStopped() called");
 
@@ -423,7 +432,7 @@ public:
   {
     Start();
   }
-  ~Primate_c()
+  virtual ~Primate_c()
   {
     Stop();    
   }
@@ -508,7 +517,10 @@ public:
   }
   ~Human_c()
   {
-    Stop();
+    WillStop(); // Pysäytä päätyö
+    mammalBasicFunctions.WillStop(); // Pysäytä elintoiminnot
+    // jthreadit hoitavat lopun automaattisesti, mutta järjestys on nyt selkeä.
+    // Stop();
   }
 protected:
 
@@ -584,7 +596,7 @@ protected:
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(!mammalBasicFunctions.IsSleeping()||(!mammalBasicFunctions.IsEating()))
       {
-	BeActive();
+	      BeActive();
       }
 
     }
@@ -1174,18 +1186,21 @@ virtual void Run(std::stop_token stoken) override {
         BeActive(); 
     } else {
         // Jos on tauolla, pidetään pieni uni ettei loop pyöri liian lujaa
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
+
   }
 
+  // 2. VASTA SILMUKAN JÄLKEEN lopetetaan sisäiset prosessit
+  safe_print("Thread ending, shutting down vital functions...");
+
   mammalBasicFunctions.WillStop();
+  mammalBasicFunctions.Join(); // Pysäytetään sisäinen elintoiminto-säie
 
   // jthread hoitaa pysäytyksen, mutta kutsutaan silti nämä siisteyden vuoksi
   mammalBasicFunctions.Stop(); // jthreadilla Stop() on nyt turvallinen
   SetStopped();
 
-  safe_print("SoftwareDeveloper_c::SetStopped() called");
-  SetStopped();
 }
 
 private:
@@ -1399,7 +1414,8 @@ int main ()
     softwareDeveloper[i].Start();
 
   // project last 60 minutes
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
+  // std::this_thread::sleep_for(std::chrono::milliseconds(1000*60));
+  std::this_thread::sleep_for(std::chrono::seconds(60));
   
   mainProjectManager.WillStop();
   for (auto i=0; i<number_of_software_developers_in_project; i++)
