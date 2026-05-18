@@ -1,43 +1,39 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                             //
-//  jobapplication.cc                                                                          //
-//  An alternative job application                                                             //
-//                                                                                             //
-//  When you start the program it ask password, correct password is "password". :-)            //
-//  The program creates project manager which follows agile methologies and, who have 12       //
-//  software developers as resource. The project manager creates and sends tasks to            //
-//  software developers via the FIFO queue. Software developers listen to the FIFO queue and   //
-//  the fastest one gets it for caried out. There is also second FIFO which report tasks done  //
-//  by software developers back to project manager. So project manager can follow tasks done.  //
-//                                                                                             //
-//  Each software developer and project manager lives in two threads (thread).                 //
-//  In the second thread, MammalBasicFunctions_c provides basic functions such as breathing,   //
-//  eating, sleeping. So, while sleeping or eating not do any work. The first thread           //
-//  carries out the actual work(payload).                                                      //
-//                                                                                             //
-//  (Total project manager and 12 software developers mean 26 threads((12*2)+2)).              //
-//                                                                                             //
-//                                                                                             //
-//  In the below are instructions for compiling the program in the target system.              //
-//  This program is coded on Fedora 27-44 Linux-system, but it most probably can be compiled   //
-//  and executed on ,e.g., MacOS, Windows and Raspberry Pi. It is standard STL program and it  //
-//  follows C++20 standard.                                                                    //
-//                                                                                             //
-//  Created by Markku Mikkanen on 30/04/2018.                                                  //
-//  Updated by Markku Mikkanen on 18/05/2026.                                                  //
-//  Copyright © 2018-2026 Markku Mikkanen. All rights reserved.                                //
-//                                                                                             //
-/////////////////////////////////////////////////////////////////////////////////////////////////
+jobapplication.cc
+An alternative job application
 
-// Compile instructions:
-// []$> g++ -Wall -std=c++20 -fno-builtin-memset jobapplication.cc -o jobapplication -pthread
-// []$> g++ -Wall -std=c++20 jobapplication.cc -o jobapplication -pthread
-// -std=[c++98, c++11, c++14, c++17, c++20, c++23]
+When you start the program it ask password, correct password is "password". :-)
+The program creates project manager which follows agile methologies and, who have 12
+software developers as resource. The project manager creates and sends tasks to
+software developers via the FIFO queue. Software developers listen to the FIFO queue and
+the fastest one gets it for caried out. There is also second FIFO which report tasks done
+by software developers back to project manager. So project manager can follow tasks done.
 
-// or:
-// []$> cmake -S . -B build
-// []$> cmake --build build
-// []$> ./build/jobapplication
+Each software developer and project manager lives in two threads (thread).
+In the second thread, MammalBasicFunctions_c provides basic functions such as breathing,
+eating, sleeping. So, while sleeping or eating not do any work. The first thread
+carries out the actual work(payload).
+
+(Total project manager and 12 software developers mean 26 threads((12*2)+2)).
+
+
+In the below are instructions for compiling the program in the target system.
+This program is coded on Fedora 27-44 Linux-system, but it most probably can be compiled
+and executed on ,e.g., MacOS, Windows and Raspberry Pi. It is standard STL program and it
+follows C++20 standard.
+
+Created by Markku Mikkanen on 30/04/2018.
+Updated by Markku Mikkanen on 18/05/2026.
+Copyright © 2018-2026 Markku Mikkanen. All rights reserved.
+
+Compile instructions:
+[]$> g++ -Wall -std=c++20 -fno-builtin-memset jobapplication.cc -o jobapplication -pthread
+[]$> g++ -Wall -std=c++20 jobapplication.cc -o jobapplication -pthread
+-std=[c++98, c++11, c++14, c++17, c++20, c++23]
+
+or:
+[]$> cmake -S . -B build
+[]$> cmake --build build
+[]$> ./build/jobapplication
 
 # JobApplication
 
