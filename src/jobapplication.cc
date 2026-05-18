@@ -777,8 +777,12 @@ private:
   
 };
 
+// Tehtävät päälliköltä kehittäjille
 ThreadSafeProjectTaskQueue_c<std::unique_ptr<ProjectTask_c>> m_ThreadSafeProjectTaskQueue;
 // ThreadSafeProjectTaskQueue_c <ProjectTask_c *> m_ThreadSafeProjectTaskQueue;
+
+// Raportit kehittäjiltä päällikölle
+ThreadSafeProjectTaskQueue_c<std::unique_ptr<ProjectTask_c>> m_ThreadSafeCompletedTasksQueue;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                             //
@@ -863,6 +867,7 @@ private:
 // Alustetaan heti määrittelyssä, niin ne ovat käyttövalmiita
   std::mt19937 rng{std::random_device{}()};
   std::uniform_int_distribution<int> dist{0, 9};
+  std::atomic<unsigned int> m_totalTasksDone{0}; // Pidetään kirjaa valmiista töistä
 
 
 public:
@@ -892,6 +897,24 @@ public:
 
   // inline bool IsProjectOnGoing() { return true; }
 
+  unsigned int GetTotalTasksDone() const { return m_totalTasksDone; }
+
+
+// protected:
+
+  void CheckStatusReports() {
+      bool isEmpty = false;
+      while (true) {
+          auto report = m_ThreadSafeCompletedTasksQueue.Pop(isEmpty);
+          if (isEmpty || !report) break;
+
+          m_totalTasksDone++; // Kasvatetaan kokonaismäärää
+
+          safe_print("SoftwareProjectManager_c [", GetType(), 
+                    "] sai raportin: Tehtävä #", report->taskSerialNumber, 
+                    " (", report->ToString(report->taskType), ") on VALMIS.");
+      }
+  }
 
 protected:
 
@@ -978,6 +1001,8 @@ protected:
         default:
         CreateTasksForSWDevelopers();
 
+        // Tarkistetaan välillä, onko tiimi saanut jotain valmiiksi
+        CheckStatusReports();
         break;
       }
   }
@@ -1025,7 +1050,7 @@ protected:
 private:
   
   static unsigned int taskSerialNumber;
-  
+
   void ShakingHandsOnAir() {} // heiluttelee käsiä ilmassa
 
   void WriteReports() {}
@@ -1326,9 +1351,15 @@ void ExecuteTasksFromProjectManager(){
             safe_print("Unknown ProjectTaskType");
             break;
           }
+          // Merkitään valmiiksi ja lähetetään takaisin
+          m_ProjectTask->doneStatus = true;
+          m_ProjectTask->reasonCode = 200; // OK
+          m_ThreadSafeCompletedTasksQueue.Push(std::move(m_ProjectTask));
+
         } else {
             // Jos tehtävä on null, se tarkoittaa että PopWait heräsi ilman tehtävää, todennäköisesti siksi että projekti on loppumassa
             safe_print("SoftwareDeveloper_c[", thisSoftwareDeveloperInstanceNumber, "] ei saanut tehtävää, projekti saattaa olla loppumassa.");
+            return;
         }
     }
     
@@ -1426,6 +1457,7 @@ int main ()
   
   // HERÄTETÄÄN JONO: Tämä vapauttaa PopWait-metodissa jumissa olevat säikeet
   m_ThreadSafeProjectTaskQueue.WakeAll();
+  m_ThreadSafeCompletedTasksQueue.WakeAll();
 
   // while(!mainProjectManager.IsStopped()) {}
   mainProjectManager.Join();
@@ -1436,6 +1468,19 @@ int main ()
     softwareDeveloper[i].Join();
   }
   
+  safe_print("--- PROJEKTIN LOPPUYHTEENVETO ---");
+  
+  // Tehdään päällikölle vielä yksi viimeinen raporttikierros
+  mainProjectManager.CheckStatusReports();
+  
+  unsigned int totalDone = mainProjectManager.GetTotalTasksDone();
+  
+  safe_print("Projekti valmistui.");
+  safe_print("Kehittäjät suorittivat yhteensä ", totalDone, " tehtävää.");
+  
+  // Voidaan myös tulostaa kuinka monta tehtävää jäi kesken (m_ThreadSafeProjectTaskQueue)
+  safe_print("Tehtäväjonoon jäi suorittamatta ", m_ThreadSafeProjectTaskQueue.Size(), " tehtävää.");
+
   safe_print("Stopped!");
   // mainProjectManager.Stop();
   // softwareDeveloper.Stop();
