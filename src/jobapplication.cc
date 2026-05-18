@@ -24,7 +24,7 @@
 //                                                                                             //
 //  Created by Markku Mikkanen on 30/04/2018.                                                  //
 //  Updated by Markku Mikkanen on 17/05/2026                                                   //                      //
-//  Copyright © 2018-2026 Markku Mikkanen. All rights reserved.                                     //
+//  Copyright © 2018-2026 Markku Mikkanen. All rights reserved.                                //
 //                                                                                             //
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
