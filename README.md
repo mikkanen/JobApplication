@@ -1,4 +1,5 @@
 jobapplication.cc
+
 An alternative job application
 
 When you start the program it ask password, correct password is "password". :-)
@@ -53,7 +54,7 @@ Ohjelma luo Agile-käytänteisen projektipäällikön, jolla on resursseina 12 A
 ohjelmistokehittäjää. Projektipäällikkö luo ja lähettää tehtäviä ohjelmistokehittäjille
 FIFO-jonon kautta. Ohjelmistokehittäjät kuuntelevat FIFO-jonoa ja nopein saa sen
 hoidettavaksi. On myös olemassa toinen FIFO jonka avulla ohjelmistokehittäjät raportoivat takaisin tehdystä
-työstä projekti managerille.
+työstä projektipäällikölle.
 
 Kukin ohjelmistokehittäjä ja projektipäällikkö pyörii kahdessa säikeessä(thread).
 Toinen säie, MammalBasicFunctions_c huolehtii perustoiminnoista kuten hengittämisestä,
